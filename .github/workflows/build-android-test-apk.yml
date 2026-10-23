@@ -36,6 +36,8 @@ jobs:
         working-directory: source
         run: |
           npm ci
+          # APK assets are served under /assets/www, so use relative Vite asset paths.
+          sed -i "s#base: '/hesab-sarraf-test/',#base: './',#" vite.config.js
           npm run build
           test -f dist/index.html
           grep -q 'type="module"' dist/index.html
