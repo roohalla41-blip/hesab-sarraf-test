@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import ReportDocument from "@/components/ReportDocument";
+import ReportDocument from "@/pages/ReportDocument";
 import { downloadReportPdf } from "@/lib/generatePdf";
 import { ArrowRight, Download, Printer, Loader2 } from "lucide-react";
 
