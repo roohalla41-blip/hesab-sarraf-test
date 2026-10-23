@@ -38,6 +38,16 @@ jobs:
           npm ci
           # APK assets are served under /assets/www, so use relative Vite asset paths.
           sed -i "s#base: '/hesab-sarraf-test/',#base: './',#" vite.config.js
+          # Use hash routing in the APK because its internal asset server does not serve SPA fallback routes.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/App.jsx')
+          s = p.read_text(encoding='utf-8').replace('BrowserRouter as Router', 'HashRouter as Router').replace('basename={import.meta.env.BASE_URL}', '')
+          p.write_text(s, encoding='utf-8')
+          p = Path('src/lib/AuthContext.jsx')
+          s = p.read_text(encoding='utf-8').replace("window.location.href = '/login';", "window.location.hash = '#/login';")
+          p.write_text(s, encoding='utf-8')
+          PY
           npm run build
           test -f dist/index.html
           grep -q 'type="module"' dist/index.html
