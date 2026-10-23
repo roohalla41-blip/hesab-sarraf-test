@@ -38,6 +38,7 @@ jobs:
           npm ci
           npm run build
           test -f dist/index.html
+          grep -q 'type="module"' dist/index.html
 
       - name: Get Android wrapper project
         uses: actions/checkout@v4
@@ -55,11 +56,45 @@ jobs:
           printf '<resources><color name="test_icon_bg">#FFFFFF</color></resources>' > app/src/main/res/values/test_icon_colors.xml
           printf '<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48"><path android:fillColor="#174EA6" android:pathData="M4,4h40v40h-40z"/><path android:fillColor="#FFFFFF" android:pathData="M13,13h22v5h-22zM13,22h22v5h-22zM13,31h15v5h-15z"/></vector>' > app/src/main/res/drawable/test_launcher.xml
           sed -i 's#@mipmap/ic_launcher#@drawable/test_launcher#g' app/src/main/AndroidManifest.xml
-          sed -i 's#https://motherapp.base44.app#file:///android_asset/www/index.html#' app/src/main/java/com/base44/apk/MainActivity.java
+          sed -i 's#https://motherapp.base44.app#https://appassets.androidplatform.net/assets/www/index.html#' app/src/main/java/com/base44/apk/MainActivity.java
           sed -i 's/applicationId "com.base44.apk"/applicationId "com.base44.apk.test"/' app/build.gradle
           sed -i 's/android:label="حساب صراف"/android:label="حساب صراف آزمایشی"/' app/src/main/AndroidManifest.xml
-          grep -q 'file:///android_asset/www/index.html' app/src/main/java/com/base44/apk/MainActivity.java
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("app/src/main/java/com/base44/apk/MainActivity.java")
+          s = p.read_text(encoding="utf-8")
+          if "WebViewAssetLoader" not in s:
+              s = s.replace(
+                  "import android.webkit.WebViewClient;",
+                  "import android.webkit.WebViewClient;\nimport androidx.webkit.WebViewAssetLoader;"
+              )
+              s = s.replace(
+                  "    private WebView webView;",
+                  "    private WebView webView;\n    private WebViewAssetLoader assetLoader;"
+              )
+              s = s.replace(
+                  "        webView.setWebViewClient(new WebViewClient() {",
+                  "        assetLoader = new WebViewAssetLoader.Builder()\n"
+                  "                .addPathHandler(\"/assets/\", new WebViewAssetLoader.AssetsPathHandler(this))\n"
+                  "                .build();\n\n"
+                  "        webView.setWebViewClient(new WebViewClient() {\n"
+                  "            @Override\n"
+                  "            public android.webkit.WebResourceResponse shouldInterceptRequest(\n"
+                  "                    WebView view, WebResourceRequest request) {\n"
+                  "                return assetLoader.shouldInterceptRequest(request.getUrl());\n"
+                  "            }\n"
+              )
+              s = s.replace(
+                  'return host.equals("motherapp.base44.app") ||',
+                  'return host.equals("appassets.androidplatform.net") ||\n'
+                  '                host.equals("motherapp.base44.app") ||'
+              )
+              p.write_text(s, encoding="utf-8")
+          PY
+          grep -q 'WebViewAssetLoader' app/src/main/java/com/base44/apk/MainActivity.java
+          grep -q 'https://appassets.androidplatform.net/assets/www/index.html' app/src/main/java/com/base44/apk/MainActivity.java
           test -f app/src/main/assets/www/index.html
+          test -f app/src/main/assets/www/assets/index-BONFZW5o.js || find app/src/main/assets/www/assets -name '*.js' -print -quit | grep -q '.'
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -82,6 +117,8 @@ jobs:
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -f "$APK"
           cp "$APK" "Hesab-Sarraf-Test.apk"
+          unzip -l "Hesab-Sarraf-Test.apk" | grep -q 'assets/www/index.html'
+          unzip -l "Hesab-Sarraf-Test.apk" | grep -q 'assets/www/assets/'
           ls -lh Hesab-Sarraf-Test.apk
 
       - name: Upload APK for download
