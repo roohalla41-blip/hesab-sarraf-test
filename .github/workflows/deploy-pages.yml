@@ -40,6 +40,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Deploy to GitHub Pages
+      # GitHub's automatic Jekyll workflow also runs for this branch. Wait for it
+      # to finish first, then publish the compiled Vite dist so raw JSX cannot win.
+      - name: Wait for automatic branch deployment to finish
+        run: sleep 60
+      - name: Deploy compiled Vite site to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
