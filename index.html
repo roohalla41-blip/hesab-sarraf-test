@@ -4,52 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" href="data:," />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f8fafc" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <title>حساب صراف - پیش‌نمایش آزمایشی</title>
-    <style>
-      html,body{margin:0;min-height:100%;background:#f8fafc;color:#172033;font-family:Vazirmatn,system-ui,sans-serif}
-      #startup-status{max-width:640px;margin:12vh auto;padding:24px;text-align:center;line-height:1.9}
-      #startup-status h1{font-size:22px;margin:0 0 10px}
-      #startup-status p{font-size:15px}
-      #startup-error{display:none;margin:16px auto;padding:14px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#991b1b;text-align:right;white-space:pre-wrap;overflow-wrap:anywhere}
-    </style>
+    <title>پنل آزمایشی</title>
   </head>
   <body>
-    <div id="root">
-      <main id="startup-status">
-        <h1>حساب صراف</h1>
-        <p>پیش‌نمایش در حال بارگذاری است…</p>
-        <div id="startup-error" role="alert"></div>
-      </main>
-    </div>
-    <script>
-      (function () {
-        function showError(message) {
-          var box = document.getElementById('startup-error');
-          var status = document.getElementById('startup-status');
-          if (!box || !status) return;
-          box.style.display = 'block';
-          box.textContent = 'خطا در اجرای پیش‌نمایش:\n' + String(message || 'خطای ناشناخته') + '\n\nلطفاً این متن را برای پشتیبانی بفرستید.';
-          var p = status.querySelector('p');
-          if (p) p.textContent = 'برنامه درست بارگذاری نشد. جزئیات خطا:';
-        }
-        window.addEventListener('error', function (event) {
-          showError(event.message || (event.target && (event.target.src || event.target.href)) || 'بارگذاری فایل برنامه ناموفق بود');
-        }, true);
-        window.addEventListener('unhandledrejection', function (event) {
-          showError(event.reason && (event.reason.stack || event.reason.message) || event.reason);
-        });
-        window.setTimeout(function () {
-          var root = document.getElementById('root');
-          if (root && root.querySelector('#startup-status')) {
-            showError('برنامه پس از ۱۲ ثانیه اجرا نشد؛ احتمالاً فایل جاوااسکریپت بارگذاری نشده یا برنامه هنگام شروع متوقف شده است.');
-          }
-        }, 12000);
-      })();
-    </script>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
