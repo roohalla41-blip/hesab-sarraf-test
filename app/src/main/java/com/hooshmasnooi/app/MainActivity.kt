@@ -396,16 +396,22 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                     },
                     Modifier.fillMaxSize().padding(padding)
                 )
-                "privacy" -> FeaturePage(
-                    "حریم خصوصی و امنیت",
-                    "اصول لازم پیش از اتصال سرویس‌ها.",
-                    listOf(
-                        "کلیدهای محرمانه" to "فقط در Secret Manager سمت سرور نگهداری می‌شوند.",
-                        "حداقل‌سازی داده" to "فقط داده ضروری جمع‌آوری می‌شود.",
-                        "کنترل کاربر" to "مدیریت و حذف داده‌ها در طراحی لحاظ می‌شود.",
-                        "ارتباط امن" to "احراز هویت و محدودیت درخواست در سمت سرور."
-                    ),
-                    Modifier.fillMaxSize().padding(padding)
+                "privacy" -> PrivacyPage(
+                    conversationCount = conversations.size,
+                    onManageHistory = { currentPage = "history" },
+                    onDeleteAll = {
+                        scope.launch {
+                            runCatching {
+                                historyRepository.deleteAllConversations()
+                                conversations.clear()
+                                messages.clear()
+                                currentConversationId = null
+                            }.onFailure {
+                                historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize().padding(padding)
                 )
                 else -> HelpPage(Modifier.fillMaxSize().padding(padding))
             }
@@ -651,6 +657,81 @@ private fun FeaturePage(
         }
         Text("این بخش در مرحله ساختار است و قابلیت عملیاتی آن هنوز فعال نشده است.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+
+@Composable
+private fun PrivacyPage(
+    conversationCount: Int,
+    onManageHistory: () -> Unit,
+    onDeleteAll: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var confirmDeleteAll by remember { mutableStateOf(false) }
+    Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
+        PageTitle(
+            "حریم خصوصی و امنیت",
+            "کنترل داده‌های ذخیره‌شده در همین دستگاه و شفافیت درباره قابلیت‌های هنوز فعال‌نشده."
+        )
+        InfoCard(
+            "ذخیره‌سازی فعلی",
+            "تاریخچه گفت‌وگوها در حافظه خصوصی برنامه روی همین دستگاه نگهداری می‌شود؛ همگام‌سازی ابری فعال نیست."
+        )
+        InfoCard(
+            "وضعیت تاریخچه",
+            "$conversationCount گفت‌وگو در فهرست محلی برنامه"
+        )
+        InfoCard(
+            "رمزنگاری اختصاصی",
+            "رمزنگاری جداگانه برای فایل تاریخچه هنوز پیاده‌سازی و روی دستگاه آزمایش نشده است."
+        )
+        InfoCard(
+            "حساب و سرویس آنلاین",
+            "ورود آنلاین و اتصال موتور هوش مصنوعی هنوز فعال نیست؛ هیچ کلید ارائه‌دهنده هوش مصنوعی نباید داخل برنامه قرار گیرد."
+        )
+        InfoCard(
+            "کلیدها و ارتباط امن",
+            "در زمان راه‌اندازی سرویس، کلیدهای ارائه‌دهنده باید فقط در Secret Manager سمت سرور بمانند و درخواست‌ها از مسیر امن احراز هویت‌شده عبور کنند."
+        )
+        Spacer(Modifier.height(8.dp))
+        Button(onClick = onManageHistory, modifier = Modifier.fillMaxWidth()) {
+            Text("مدیریت تاریخچه گفت‌وگوها")
+        }
+        Spacer(Modifier.height(8.dp))
+        TextButton(
+            onClick = { confirmDeleteAll = true },
+            enabled = conversationCount > 0,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("پاک‌کردن همه داده‌های تاریخچه", color = MaterialTheme.colorScheme.error)
+        }
+        Text(
+            "توجه: حذف تاریخچه، فایل پشتیبان بازیابیِ احتمالیِ مربوط به فایل خراب را نیز در صورت وجود پاک می‌کند. این کار قابل بازگشت نیست.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+
+    if (confirmDeleteAll) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteAll = false },
+            title = { Text("حذف دائمی تاریخچه؟") },
+            text = {
+                Text("همه گفت‌وگوها و پیام‌های محلی و نسخه پشتیبان بازیابیِ احتمالی حذف می‌شوند. این عملیات قابل بازگشت نیست.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteAll()
+                    confirmDeleteAll = false
+                }) {
+                    Text("حذف دائمی", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteAll = false }) { Text("انصراف") }
+            }
+        )
     }
 }
 
