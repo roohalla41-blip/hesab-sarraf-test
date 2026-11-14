@@ -8,7 +8,8 @@ This is a repository-only implementation draft. It does not deploy or configure 
 - Adapter keeps provider credentials out of Android and supports an optional app-session token.
 - JSON-backed local conversation repository in Android private internal storage.
 - Chat screen creates conversations, persists user messages, restores the latest conversation on launch, and opens saved conversations from History.
-- History screen supports per-conversation deletion with a confirmation dialog.
+- History screen supports per-conversation deletion and clear-all deletion with confirmation dialogs.
+- Appearance preview and language selection preferences are persisted locally on the device.
 - Local history read, write, and delete failures now surface a user-visible error dialog.
 - Local history is bounded to 40 conversations and 300 messages per conversation.
 - Server-side chat function draft reads provider credentials only from server environment variables.
@@ -22,7 +23,9 @@ This is a repository-only implementation draft. It does not deploy or configure 
 - The Android adapter is not wired into MainActivity or a ViewModel and is not enabled in the app.
 - The currently deployed `ai-assistant` function still contains the legacy حساب صراف system prompt and reads `GROQ_API_KEY` / `GROQ_MODEL`; it is not an ATLAS production endpoint.
 - No confirmed successful live model request from the Android app.
-- Local history is not encrypted at the application layer and has no bulk-delete or export controls yet.
+- Local history is not encrypted at the application layer and has no export control yet.
+- Theme selection currently persists as a preview preference; full dynamic color-scheme switching is not complete.
+- Language selection currently persists as a preference; full translations and device-language auto-detection are not complete.
 - No streaming/SSE or Android cancellation propagation.
 - No atomic per-account quota, durable per-IP rate limiting, abuse controls, moderation pipeline, or usage ledger.
 - No account authentication flow or cloud conversation synchronization.
@@ -38,4 +41,4 @@ This is a repository-only implementation draft. It does not deploy or configure 
 6. Add local-storage tests, adapter tests, and integration tests, then explicitly authorize deployment. This change does not deploy anything.
 
 ## Current status
-The Android gateway remains disabled and disconnected from the legacy live endpoint. Local chat history is connected to the UI on a work branch, including per-conversation deletion and visible persistence errors. The production AI engine is not complete. Review and test all source before deployment.
+The Android gateway remains disabled and disconnected from the legacy live endpoint. Local chat history is connected to the UI on a work branch, including per-conversation deletion, clear-all history, visible persistence errors, and locally persisted appearance/language preferences. The production AI engine is not complete. Review and test all source before deployment.
