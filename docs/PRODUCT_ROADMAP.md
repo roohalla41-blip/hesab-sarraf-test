@@ -10,10 +10,10 @@
 
 ## Core product structure
 - [x] Browser preview navigation for chat, history, explore, tools, profile, plans, settings, privacy, and help
-- [x] First-pass content and empty states for all browser preview sections
+- [x] First-pass Android Compose navigation drawer and screen shells for the same product areas
+- [x] First-pass content and empty states for all primary sections
 - [x] Preview-only theme and language controls
 - [x] Clear notices for features that are not connected or operational
-- [ ] Port the complete navigation shell and section layouts into Android Compose
 - [ ] Complete resource-based localization throughout Android UI
 - [ ] Durable local-only conversation history and conversation management
 - [ ] Full chat actions: copy, edit/resend, regenerate, stop, share, and feedback
@@ -43,4 +43,4 @@
 - [ ] Store listing, privacy disclosures, and support process
 - [ ] Build and signed release only after explicit user approval
 
-A roadmap item marked complete means the browser preview structure exists; it does not mean the feature is operational in Android or connected to live services. No AI, database, authentication, billing, APK build, or deployment is included in this stage.
+A roadmap item marked complete means a first-pass UI/navigation structure exists; it does not mean the feature is operational or connected to live services. No AI, database, authentication, billing, APK build, or deployment is included in this stage.
