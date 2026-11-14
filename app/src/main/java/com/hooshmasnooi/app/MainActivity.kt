@@ -41,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -49,6 +50,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -75,7 +77,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme {
+            MaterialTheme(
+                colorScheme = lightColorScheme(
+                    primary = Color(0xFF173B63),
+                    onPrimary = Color.White,
+                    primaryContainer = Color(0xFFDCEBFA),
+                    onPrimaryContainer = Color(0xFF102C49),
+                    secondary = Color(0xFF168C91),
+                    secondaryContainer = Color(0xFFD6F1EF),
+                    background = Color(0xFFF7F9FC),
+                    surface = Color(0xFFFFFFFF),
+                    surfaceVariant = Color(0xFFEAF0F6),
+                    onSurface = Color(0xFF172536),
+                    onSurfaceVariant = Color(0xFF526273)
+                )
+            ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     AssistantScreen()
                 }
@@ -132,9 +148,9 @@ private fun AssistantScreen() {
                         }
                         Spacer(Modifier.width(10.dp))
                         Column {
-                            Text("هوش مصنوعی", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("ATLAS AI", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Text(
-                                "دستیار هوشمند فارسی",
+                                "دستیار هوشمند فارسی • اطلس",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -197,7 +213,7 @@ private fun AssistantScreen() {
                     }
                 }
                 Text(
-                    "نسخه آزمایشی • پاسخ‌گویی واقعی پس از اتصال سرویس فعال می‌شود",
+                    "ATLAS AI • نسخه اولیه؛ پاسخ هوشمند پس از اتصال سرویس فعال می‌شود",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 6.dp),
@@ -236,9 +252,10 @@ private fun AssistantScreen() {
     if (showSettings) {
         AlertDialog(
             onDismissRequest = { showSettings = false },
-            title = { Text("تنظیمات برنامه") },
+            title = { Text("تنظیمات ATLAS AI") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("نام برنامه: اطلس AI")
                     Text("وضعیت: نسخه اولیه، بدون اتصال به سرور")
                     Text("زبان رابط: فارسی")
                     Text("کلید هوش مصنوعی در گوشی یا فایل برنامه ذخیره نمی‌شود.")
@@ -278,13 +295,13 @@ private fun WelcomeContent(
         }
         Spacer(Modifier.height(20.dp))
         Text(
-            "چطور می‌توانم کمک‌تان کنم؟",
+            "سلام، من اطلس هستم",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "پرسش خود را بنویسید یا یکی از پیشنهادهای زیر را انتخاب کنید.",
+            "دستیار هوشمند شما. پرسش خود را بنویسید یا یکی از پیشنهادهای زیر را انتخاب کنید.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
