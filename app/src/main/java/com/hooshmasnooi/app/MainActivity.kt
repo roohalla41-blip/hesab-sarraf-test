@@ -124,6 +124,7 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
+    var historyError by remember { mutableStateOf<String?>(null) }
     var darkPreview by remember { mutableStateOf(false) }
     var languagePreview by remember { mutableStateOf("فارسی") }
     var nextId by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -162,6 +163,8 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 val refreshed = historyRepository.getConversations()
                 conversations.clear()
                 conversations.addAll(refreshed)
+            }.onFailure {
+                historyError = "ذخیره گفت‌وگو انجام نشد. فضای دستگاه و دسترسی برنامه را بررسی کنید."
             }
         }
     }
@@ -176,6 +179,8 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 nextId = (savedMessages.maxOfOrNull { it.id } ?: System.currentTimeMillis()) + 1
                 input = ""
                 currentPage = "chat"
+            }.onFailure {
+                historyError = "بازیابی این گفت‌وگو انجام نشد. دوباره تلاش کنید."
             }
         }
     }
@@ -192,6 +197,8 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 currentConversationId = latest.id
                 nextId = (savedMessages.maxOfOrNull { it.id } ?: System.currentTimeMillis()) + 1
             }
+        }.onFailure {
+            historyError = "خواندن تاریخچه انجام نشد. لطفاً برنامه را دوباره باز کنید."
         }
     }
 
@@ -313,7 +320,25 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 "chat" -> ChatPage(messages, listState, Modifier.fillMaxSize().padding(padding)) {
                     sendMessage(it)
                 }
-                "history" -> HistoryPage(conversations, Modifier.fillMaxSize().padding(padding), ::openConversation)
+                "history" -> HistoryPage(
+                    conversations,
+                    Modifier.fillMaxSize().padding(padding),
+                    ::openConversation,
+                    { conversationId ->
+                        scope.launch {
+                            runCatching {
+                                historyRepository.deleteConversation(conversationId)
+                                conversations.removeAll { it.id == conversationId }
+                                if (currentConversationId == conversationId) {
+                                    currentConversationId = null
+                                    messages.clear()
+                                }
+                            }.onFailure {
+                                historyError = "حذف گفت‌وگو انجام نشد. دوباره تلاش کنید."
+                            }
+                        }
+                    }
+                )
                 "explore" -> FeaturePage(
                     "کاوش دستیارها",
                     "حالت‌های کاری تخصصی برای نیازهای مختلف.",
@@ -361,6 +386,17 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 else -> HelpPage(Modifier.fillMaxSize().padding(padding))
             }
         }
+    }
+
+    if (historyError != null) {
+        AlertDialog(
+            onDismissRequest = { historyError = null },
+            title = { Text("خطا در تاریخچه") },
+            text = { Text(historyError.orEmpty()) },
+            confirmButton = {
+                TextButton(onClick = { historyError = null }) { Text("متوجه شدم") }
+            }
+        )
     }
 
     if (showStatus) {
@@ -483,8 +519,10 @@ private fun SuggestionCard(icon: String, title: String, description: String, onC
 private fun HistoryPage(
     conversations: List<Conversation>,
     modifier: Modifier = Modifier,
-    onConversationClick: (String) -> Unit
+    onConversationClick: (String) -> Unit,
+    onDeleteConversation: (String) -> Unit
 ) {
+    var pendingDelete by remember { mutableStateOf<Conversation?>(null) }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle(
             "تاریخچه گفت‌وگوها",
@@ -494,21 +532,33 @@ private fun HistoryPage(
             EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال اولین پیام، گفت‌وگوی شما اینجا ذخیره می‌شود.")
         } else {
             conversations.forEach { conversation ->
-                Card(
-                    onClick = { onConversationClick(conversation.id) },
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                    )
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(conversation.title, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(5.dp))
-                        Text(
-                            "${conversation.messageCount} پیام",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Card(
+                        onClick = { onConversationClick(conversation.id) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        )
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(conversation.title, fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.height(5.dp))
+                            Text(
+                                "${conversation.messageCount} پیام",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    IconButton(onClick = { pendingDelete = conversation }) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "حذف گفت‌وگو",
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -519,6 +569,23 @@ private fun HistoryPage(
             "این تاریخچه فقط روی همین دستگاه است؛ همگام‌سازی ابری هنوز فعال نیست.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelSmall
+        )
+    }
+
+    pendingDelete?.let { conversation ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("حذف گفت‌وگو؟") },
+            text = { Text("تمام پیام‌های «${conversation.title}» از این دستگاه حذف می‌شوند.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteConversation(conversation.id)
+                    pendingDelete = null
+                }) { Text("حذف", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("انصراف") }
+            }
         )
     }
 }
@@ -600,7 +667,7 @@ private fun HelpPage(modifier: Modifier = Modifier) {
         PageTitle("راهنما و پشتیبانی", "پاسخ به پرسش‌های پایه درباره نسخه ساختاری اطلس.")
         InfoCard("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.")
         InfoCard("آیا برای دیدن ساختار کلید لازم است؟", "خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.")
-        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "خیر؛ این نسخه فقط ساختار نمایشی است.")
+        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "تاریخچه گفت‌وگوها به‌صورت محلی در حافظه خصوصی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.")
         InfoCard("پشتیبانی", "راه ارتباطی رسمی در زمان آماده‌سازی انتشار اضافه خواهد شد.")
     }
 }
