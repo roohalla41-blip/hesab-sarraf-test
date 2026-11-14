@@ -64,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -71,6 +72,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hooshmasnooi.app.domain.model.ChatMessage
+import com.hooshmasnooi.app.data.local.ChatStorage
 import kotlinx.coroutines.launch
 
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
@@ -117,13 +119,14 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AtlasApp() {
+    val appContext = LocalContext.current.applicationContext
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
     var darkPreview by remember { mutableStateOf(false) }
     var languagePreview by remember { mutableStateOf("فارسی") }
     var nextId by remember { mutableStateOf(1L) }
-    val messages = remember { mutableStateListOf<ChatMessage>() }
+    val messages = remember { mutableStateListOf<ChatMessage>().apply { addAll(ChatStorage.load(appContext)) } }
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -162,7 +165,7 @@ private fun AtlasApp() {
                     }
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "نسخه ساختاری • بدون اتصال هوش مصنوعی",
+                        "گفت‌وگوی ذخیره‌شده روی همین دستگاه",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -240,7 +243,7 @@ private fun AtlasApp() {
                             }
                         }
                         Text(
-                            "پیش‌نمایش ساختاری؛ هوش مصنوعی هنوز متصل نیست و پاسخی تولید نمی‌شود.",
+                            "پیام‌ها به‌صورت خصوصی روی همین دستگاه ذخیره می‌شوند؛ پاسخ هوش مصنوعی هنوز فعال نیست.",
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -309,12 +312,12 @@ private fun AtlasApp() {
             title = { Text("وضعیت ATLAS AI") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("ساختار صفحات: در حال تکمیل")
+                    Text("رابط اصلی Android: در حال توسعه")
                     Text("زبان پیش‌نمایش: " + languagePreview)
                     Text("هوش مصنوعی: هنوز متصل نشده")
                     Text("دیتابیس و حساب آنلاین: هنوز متصل نشده")
                     Text("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد")
-                    Text("هیچ APK یا Build در این مرحله اجرا نشده است.")
+                    Text("گفت‌وگو: ذخیره محلی فعال؛ اتصال هوش مصنوعی و آزمون نهایی باقی است.")
                 }
             },
             confirmButton = { TextButton(onClick = { showStatus = false }) { Text("بستن") } }
@@ -421,7 +424,7 @@ private fun SuggestionCard(icon: String, title: String, description: String, onC
 @Composable
 private fun HistoryPage(messages: List<ChatMessage>, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تاریخچه گفت‌وگوها", "پیام‌های این نشست در حافظه موقت نمایش داده می‌شوند.")
+        PageTitle("تاریخچه گفت‌وگوها", "پیام‌های این دستگاه از فضای خصوصی برنامه خوانده می‌شوند.")
         if (messages.isEmpty()) {
             EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با شروع یک گفت‌وگو، پیام‌های این نشست اینجا دیده می‌شوند.")
         } else {
@@ -430,7 +433,7 @@ private fun HistoryPage(messages: List<ChatMessage>, modifier: Modifier = Modifi
                 Spacer(Modifier.height(8.dp))
             }
         }
-        Text("ذخیره دائمی و همگام‌سازی ابری هنوز فعال نیست.",
+        Text("ذخیره محلی فعال است؛ همگام‌سازی ابری هنوز فعال نیست.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -509,10 +512,10 @@ private fun SettingsPage(
 @Composable
 private fun HelpPage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("راهنما و پشتیبانی", "پاسخ به پرسش‌های پایه درباره نسخه ساختاری اطلس.")
+        PageTitle("راهنما و پشتیبانی", "راهنمای استفاده از اطلس AI.")
         InfoCard("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.")
         InfoCard("آیا برای دیدن ساختار کلید لازم است؟", "خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.")
-        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "خیر؛ این نسخه فقط ساختار نمایشی است.")
+        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "پیام‌های گفت‌وگو به‌صورت محلی و خصوصی روی همین دستگاه ذخیره می‌شوند.")
         InfoCard("پشتیبانی", "راه ارتباطی رسمی در زمان آماده‌سازی انتشار اضافه خواهد شد.")
     }
 }
