@@ -12,6 +12,7 @@
 - گفت‌وگوی هوشمند و مدیریت گفتگوها
 - تاریخچه و جست‌وجوی مکالمات
 - بخش Explore برای دستیارها و کاربردهای تخصصی
+- مرکز اتصال ATLAS CONNECT برای سرویس‌های خارجی (نمونه رابط؛ OAuth هنوز پیاده‌سازی نشده)
 - ابزارهای تصویر، فایل، وب و برنامه‌نویسی
 - ورودی و خروجی صوتی
 - حساب کاربری، سهمیه مصرف و اشتراک
@@ -40,4 +41,4 @@
 ## سیاست ساخت
 ساخت APK و اجرای Build خودکار غیرفعال است. هیچ Build یا انتشار APK انجام نمی‌شود مگر با درخواست صریح کاربر.
 
-جزئیات معماری در [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) و نقشه محصول در [docs/PRODUCT_STRUCTURE.md](docs/PRODUCT_STRUCTURE.md) قرار دارد. پیش‌نمایش وب در پوشه [preview](preview/) قرار دارد.
+جزئیات معماری در [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)، نقشه محصول در [docs/PRODUCT_STRUCTURE.md](docs/PRODUCT_STRUCTURE.md) و نقشه اتصال سرویس‌ها در [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) قرار دارد. پیش‌نمایش وب در پوشه [preview](preview/) قرار دارد.
