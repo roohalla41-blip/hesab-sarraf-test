@@ -8,3 +8,8 @@
 body.light .panel-card,body.light .feature-card,body.light .profile-card,body.light .plan-card,body.light .settings-list,body.light .faq-list details,body.light .support-card{background:#fff;color:#243750}body.light .history-row{color:#243750}body.light .page-heading p,body.light .muted,body.light .feature-copy p,body.light .empty-state p,body.light .disclaimer,body.light .setting-row small{color:#657991}body.light .primary-btn,body.light .secondary-btn{color:#243750;background:#f3f5ff}
 @media(max-width:900px){.plan-grid{grid-template-columns:1fr}.plan-card ul{min-height:0}}
 @media(max-width:760px){.page-heading{align-items:flex-start;flex-direction:column}.feature-grid{grid-template-columns:1fr}.feature-card{padding:13px}.state-pill{font-size:8px}.panel-card,.settings-list{padding:13px}.setting-row{align-items:flex-start}.setting-row .secondary-btn{flex-shrink:0}.profile-card{padding:16px}.page-view{padding-top:2px}}
+
+.message.assistant-message{margin:0 auto 12px 0;background:#122b2b;border-color:#48d3c244}
+.error-notice{border-color:#ef8b8b55;color:#ffb6b6;background:#c53b3b18}
+#send:disabled{opacity:.65;cursor:wait}
+body.light .message.assistant-message{background:#e1f4ef;color:#203b38}
