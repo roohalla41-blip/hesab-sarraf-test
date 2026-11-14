@@ -1,0 +1,4 @@
+project_id = "hoosh-masnooi"
+
+[functions.chat]
+verify_jwt = true
