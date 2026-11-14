@@ -22,3 +22,13 @@ body.light .panel-card,body.light .feature-card,body.light .profile-card,body.li
 .command-icon.violet{background:#827aff24;color:#b4adff}.command-icon.blue{background:#53a7f322;color:#70b9ff}.command-icon.amber{background:#eab45a22;color:#f0c276}.command-icon.mint{background:#42cdb622;color:#63e0cf}.command-icon.pink{background:#d68bff22;color:#e2a7ff}
 @media(max-width:760px){.command-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.command-tile{min-height:108px;padding:10px}.command-center{margin-bottom:18px}}
 body.light .command-tile{background:linear-gradient(145deg,#fff,#f3f6fc)}body.light .command-heading{color:#243750}
+
+
+/* ATLAS CONNECT integration directory */
+.integration-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.integration-card{display:flex;align-items:center;gap:13px;min-width:0;padding:15px;border:1px solid var(--line);border-radius:17px;background:#142238a8}
+.integration-mark{width:42px;height:42px;flex-shrink:0;display:grid;place-items:center;border-radius:13px;font-size:15px;font-weight:800}
+.github-mark{background:#8294aa22;color:#dce7f5}.gmail-mark{background:#ea777722;color:#ffaaa0}.drive-mark{background:#55b98a22;color:#80dfad}.supabase-mark{background:#43c99a22;color:#6be2ae}.calendar-mark{background:#64a7e922;color:#8bc6ff}
+.integration-copy{min-width:0;flex:1}.integration-copy b{font-size:12px}.integration-copy p{font-size:10px;line-height:1.7;color:var(--muted);margin:3px 0}.integration-copy small{font-size:9px;color:#83d6cb}.integration-card .secondary-btn{flex-shrink:0;font-size:10px;padding:8px 10px}
+body.light .integration-card{background:#fff;color:#243750}
+@media(max-width:760px){.integration-grid{grid-template-columns:1fr}.integration-card{gap:10px;padding:12px}.integration-mark{width:38px;height:38px}.integration-card .secondary-btn{font-size:9px;padding:7px 8px}}
