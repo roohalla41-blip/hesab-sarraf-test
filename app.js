@@ -122,7 +122,7 @@ function featureCard(icon, title, description, state = "در نقشه راه") {
 function renderPanel(panel) {
   const panels = {
     history: `
-      <div class="page-heading"><div><div class="eyebrow">فضای کاری شما</div><h2>تاریخچه گفت‌وگوها</h2><p>مکالمه‌های همین نشست نمایشی در این فهرست دیده می‌شوند.</p></div><button class="primary-btn" data-action="new-chat">＋ گفت‌وگوی تازه</button></div>
+      <div class="page-heading"><div><div class="eyebrow">فضای کاری شما</div><h2>تاریخچه گفت‌وگوها</h2><p>مکالمه‌های همین نشست در این فهرست دیده می‌شوند.</p></div><button class="primary-btn" data-action="new-chat">＋ گفت‌وگوی تازه</button></div>
       <div class="panel-card"><div class="panel-toolbar"><b>گفت‌وگوهای اخیر</b><span class="muted">${conversations.length} مورد در این نشست</span></div>
       ${conversations.length ? conversations.map(item => `<button class="history-row" data-conversation="${escapeHtml(item.id)}"><span class="history-icon">◷</span><span class="history-title"><b>${escapeHtml(item.title)}</b><small>${item.messages.length} پیام • ${item.updated.toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"})}</small></span><span class="muted">›</span></button>`).join("") : `<div class="empty-state"><div class="empty-icon">◷</div><b>هنوز گفت‌وگویی ثبت نشده</b><p>بعد از نوشتن نخستین پیام، عنوان آن در این قسمت نمایش داده می‌شود.</p></div>`}
       </div><p class="disclaimer">تاریخچه فعلاً فقط تا زمانی که این صفحه باز است در حافظه موقت مرورگر نگهداری می‌شود؛ ذخیره دائمی یا ابری فعال نیست.</p>`,
@@ -135,7 +135,7 @@ function renderPanel(panel) {
         ${featureCard("⌕","پژوهشگر","تحلیل موضوع، طرح پرسش و ساختار تحقیق","قالب آماده")}
         ${featureCard("◎","دستیار کسب‌وکار","برنامه‌ریزی، ایده تجاری و تحلیل فرایند","در نقشه راه")}
         ${featureCard("✧","دستیار عمومی","گفت‌وگوی چندمنظوره و پاسخ‌گویی عمومی","قالب آماده")}
-      </div><p class="disclaimer">این کارت‌ها رابط و تعریف محصول هستند؛ هیچ دستیار تخصصی هنوز به مدل هوش مصنوعی متصل نیست.</p>`,
+      </div><p class="disclaimer">اتصال گفت‌وگوی عمومی فعال است؛ دستیارهای تخصصی و ابزارهای این بخش هنوز کامل پیاده‌سازی نشده‌اند.</p>`,
     tools: `
       <div class="page-heading"><div><div class="eyebrow">ATLAS TOOLBOX</div><h2>ابزارهای اطلس</h2><p>جایگاه ابزارهای آینده در یک محیط یکپارچه.</p></div></div>
       <div class="feature-grid">
@@ -182,7 +182,7 @@ function renderPanel(panel) {
     help: `
       <div class="page-heading"><div><div class="eyebrow">HELP CENTER</div><h2>راهنما و پشتیبانی</h2><p>راهنمای استفاده از بخش‌های اصلی برنامه.</p></div></div>
       <div class="faq-list">
-        <details open><summary>آیا اطلس اکنون پاسخ هوش مصنوعی می‌دهد؟</summary><p>خیر. در این مرحله فقط رابط کاربری و ساختار برنامه آماده می‌شود. اتصال مدل در مرحله جداگانه انجام خواهد شد.</p></details>
+        <details open><summary>آیا اطلس اکنون پاسخ هوش مصنوعی می‌دهد؟</summary><p>بله. گفت‌وگوی عمومی این پیش‌نمایش به مدل هوش مصنوعی از طریق تابع امن سمت سرور متصل است؛ ابزارهای دیگر هنوز فعال نیستند.</p></details>
         <details><summary>آیا برای دیدن ساختار به کلید نیاز دارم؟</summary><p>خیر. ساختار، صفحات، منوها و تنظیمات نمایشی بدون کلید قابل طراحی و بررسی هستند.</p></details>
         <details><summary>آیا اطلاعات این پیش‌نمایش ذخیره می‌شوند؟</summary><p>خیر. پیام‌ها فقط در حافظه موقت همین نشست نمایشی نگهداری می‌شوند.</p></details>
         <details><summary>چه زمانی قابلیت‌ها فعال می‌شوند؟</summary><p>پس از تکمیل رابط، بازبینی امنیتی، انتخاب سرویس و اجازه جداگانه برای اتصال.</p></details>
@@ -203,7 +203,7 @@ function renderPanel(panel) {
     if (!item) return;
     currentMessages = [...item.messages];
     messages.replaceChildren();
-    currentMessages.forEach(message => renderMessage(message.text));
+    currentMessages.forEach(message => renderMessage(message.text, message.role || "user"));
     pageView.hidden = true;
     messages.hidden = false;
     composerWrap.hidden = false;
