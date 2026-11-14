@@ -25,9 +25,10 @@ The Android app has a real Gmail read-only integration path in source code, not 
 2. Enable the Gmail API for that project.
 3. Configure the OAuth consent screen and add the testing Google account as a test user if the app is in Testing mode.
 4. Create an Android OAuth client using the exact package name `com.hooshmasnooi.app` and the SHA-1 fingerprint of the signing certificate used for the APK. Debug and release certificates have different fingerprints.
-5. Build and install an APK signed with that matching certificate.
-6. Open **اتصال برنامه‌ها**, tap **اتصال حساب Gmail با Google**, select the test account, and approve read-only Gmail access.
-7. In the integration page, confirm that messages load. Then open the main chat and send «ایمیل‌های جدیدم را بررسی کن». Confirm that ATLAS returns the same inbox data as an assistant message.
+5. Pushes to `main` trigger the Android debug build workflow. The workflow is configured to preserve its debug signing key between builds, print its SHA-1 fingerprint in the build log, and upload `ATLAS-AI-debug` as a 14-day artifact.
+6. Copy the SHA-1 printed by that workflow into the Android OAuth client for package `com.hooshmasnooi.app`. Download and install the matching `ATLAS-AI-debug` artifact.
+7. Open **اتصال برنامه‌ها**, tap **اتصال حساب Gmail با Google**, select the test account, and approve read-only Gmail access.
+8. In the integration page, confirm that messages load. Then open the main chat and send «ایمیل‌های جدیدم را بررسی کن». Confirm that ATLAS returns the inbox data as an assistant message.
 
 ## Other integrations
 
