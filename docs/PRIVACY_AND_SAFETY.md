@@ -15,7 +15,8 @@
 - Android app sandboxing restricts ordinary access by other apps; this implementation does not add application-level encryption.
 - Users should not put passwords, API keys, or other secrets into chat messages.
 - The app currently limits retention to the newest 40 conversations and 300 messages per conversation.
-- In-app deletion and export controls are not implemented yet. Clearing app data or uninstalling the app removes this local file.
+- Users can delete an individual conversation from the History screen after a confirmation prompt.
+- Bulk deletion and export controls are not implemented yet. Clearing app data or uninstalling the app removes this local file.
 
 ## Account and session principles
 - Authentication is not implemented in the current scaffold.
