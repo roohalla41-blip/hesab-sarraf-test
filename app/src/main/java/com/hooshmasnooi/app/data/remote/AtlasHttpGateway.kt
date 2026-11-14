@@ -5,6 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -30,8 +32,19 @@ class AtlasHttpGateway(
         conversationId: String?
     ): AiGatewayResult {
         val latestUserMessage = messages.lastOrNull { it.fromUser }?.text?.trim().orEmpty()
-        if (latestUserMessage.isBlank() || latestUserMessage.length > 2000) {
+        if (latestUserMessage.isBlank() || latestUserMessage.length > MAX_MESSAGE_CHARS) {
             return AiGatewayResult.Failure(AiFailure.INVALID_RESPONSE)
+        }
+
+        // Refuse cleartext, malformed, credential-bearing, or unexpectedly long URLs.
+        val endpoint = try {
+            URL(functionUrl).also {
+                require(it.protocol.equals("https", ignoreCase = true))
+                require(it.host.isNotBlank() && it.userInfo == null && it.ref == null)
+                require(functionUrl.length <= MAX_URL_CHARS)
+            }
+        } catch (_: Exception) {
+            return AiGatewayResult.Failure(AiFailure.NOT_CONFIGURED)
         }
 
         val appToken = try {
@@ -44,10 +57,10 @@ class AtlasHttpGateway(
             var connection: HttpURLConnection? = null
             try {
                 val context = JSONArray()
-                messages.takeLast(8).forEach { message ->
+                messages.takeLast(MAX_CONTEXT_MESSAGES).forEach { message ->
                     val item = JSONObject()
                         .put("role", if (message.fromUser) "user" else "assistant")
-                        .put("text", message.text.take(600))
+                        .put("text", message.text.take(MAX_CONTEXT_CHARS))
                     context.put(item)
                 }
 
@@ -55,10 +68,10 @@ class AtlasHttpGateway(
                     .put("message", latestUserMessage)
                     .put("context", context)
 
-                connection = (URL(functionUrl).openConnection() as HttpURLConnection).apply {
+                connection = (endpoint.openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 15_000
-                    readTimeout = 30_000
+                    connectTimeout = CONNECT_TIMEOUT_MS
+                    readTimeout = READ_TIMEOUT_MS
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json; charset=utf-8")
                     setRequestProperty("Accept", "application/json")
@@ -80,7 +93,7 @@ class AtlasHttpGateway(
                 } else {
                     connection.errorStream
                 }
-                val responseText = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                val responseText = stream?.use { readBounded(it, MAX_RESPONSE_BYTES) }.orEmpty()
                 val response = try {
                     JSONObject(responseText)
                 } catch (_: Exception) {
@@ -105,7 +118,7 @@ class AtlasHttpGateway(
                 }
             } catch (_: java.net.SocketTimeoutException) {
                 AiGatewayResult.Failure(AiFailure.NETWORK)
-            } catch (_: java.io.IOException) {
+            } catch (_: IOException) {
                 AiGatewayResult.Failure(AiFailure.NETWORK)
             } catch (_: Exception) {
                 AiGatewayResult.Failure(AiFailure.UNKNOWN)
@@ -113,5 +126,29 @@ class AtlasHttpGateway(
                 connection?.disconnect()
             }
         }
+    }
+
+    private fun readBounded(input: java.io.InputStream, maxBytes: Int): String {
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val count = input.read(buffer)
+            if (count < 0) break
+            if (output.size() + count > maxBytes) {
+                throw IOException("Response exceeds configured limit")
+            }
+            output.write(buffer, 0, count)
+        }
+        return output.toString(Charsets.UTF_8.name())
+    }
+
+    private companion object {
+        const val MAX_MESSAGE_CHARS = 2000
+        const val MAX_CONTEXT_MESSAGES = 8
+        const val MAX_CONTEXT_CHARS = 600
+        const val MAX_RESPONSE_BYTES = 64 * 1024
+        const val MAX_URL_CHARS = 2048
+        const val CONNECT_TIMEOUT_MS = 15_000
+        const val READ_TIMEOUT_MS = 30_000
     }
 }
