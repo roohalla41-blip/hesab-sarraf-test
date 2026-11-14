@@ -9,7 +9,7 @@ The Android app has a real Gmail read-only integration path in source code, not 
 - After the user grants consent, ATLAS calls the Gmail REST API and fetches up to 8 messages from the inbox, including sender, subject, date metadata, and snippet.
 - The Integrations page displays the fetched messages.
 - The main chat recognises direct Gmail-check requests in Persian or English (for example, «ایمیل‌های جدیدم را بررسی کن» / “check my Gmail”) and calls the same Gmail API path. The result is written back as an assistant message in the local conversation.
-- The chat history is stored locally on the device using the app's existing private chat storage.
+- The chat history (including Gmail snippets returned in chat) is stored locally in the app's private SharedPreferences. This current storage is app-private but is not encrypted at rest by a dedicated encrypted-storage layer; avoid using a shared/public device for sensitive mailbox testing.
 - The access token is held in Activity memory only. It is not written to SharedPreferences, Supabase, or GitHub.
 - The current pilot is read-only: it does not send, draft, delete, modify, or archive email.
 
