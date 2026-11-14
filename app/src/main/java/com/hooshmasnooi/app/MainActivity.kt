@@ -97,8 +97,8 @@ import com.hooshmasnooi.app.data.local.ChatStorage
 
 private fun isGmailCheckRequest(text: String): Boolean {
     val normalized = text.lowercase()
-    val mentionsGmail = listOf("gmail", "جیمیل", "ایمیل", "صندوق ورودی").any { normalized.contains(it) }
-    val asksToCheck = listOf("بررسی", "چک", "بخوان", "بخون", "خلاصه", "جدید", "دریافت", "ببین").any { normalized.contains(it) }
+    val mentionsGmail = listOf("gmail", "جیمیل", "ایمیل", "نامه", "صندوق ورودی").any { normalized.contains(it) }
+    val asksToCheck = listOf("بررسی", "چک", "بخوان", "بخون", "خلاصه", "جدید", "دریافت", "ببین", "نگاه", "وارسی", "check", "read", "review").any { normalized.contains(it) }
     return mentionsGmail && asksToCheck
 }
 
