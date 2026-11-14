@@ -64,12 +64,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private data class ChatMessage(
-    val id: Long,
-    val text: String,
-    val fromUser: Boolean
-)
+import com.hooshmasnooi.app.domain.model.ChatMessage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
