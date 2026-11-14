@@ -1,15 +1,8 @@
 name: Android build
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # Builds are intentionally manual. Do not run builds unless the user explicitly asks.
   workflow_dispatch:
-
-concurrency:
-  group: atlas-ai-android-build-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
