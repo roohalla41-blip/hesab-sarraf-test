@@ -29,6 +29,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
@@ -50,7 +59,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -64,6 +73,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -94,18 +104,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Color(0xFF173B63),
+                colorScheme = darkColorScheme(
+                    primary = Color(0xFF8B83FF),
                     onPrimary = Color.White,
-                    primaryContainer = Color(0xFFDCEBFA),
-                    onPrimaryContainer = Color(0xFF102C49),
-                    secondary = Color(0xFF168C91),
-                    secondaryContainer = Color(0xFFD6F1EF),
-                    background = Color(0xFFF7F9FC),
-                    surface = Color(0xFFFFFFFF),
-                    surfaceVariant = Color(0xFFEAF0F6),
-                    onSurface = Color(0xFF172536),
-                    onSurfaceVariant = Color(0xFF526273)
+                    primaryContainer = Color(0xFF292A55),
+                    onPrimaryContainer = Color(0xFFE9E7FF),
+                    secondary = Color(0xFF55D6C7),
+                    secondaryContainer = Color(0xFF173C42),
+                    background = Color(0xFF091321),
+                    surface = Color(0xFF101D30),
+                    surfaceVariant = Color(0xFF192A40),
+                    onSurface = Color(0xFFEAF1FC),
+                    onSurfaceVariant = Color(0xFF9AAEC5)
                 )
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -357,38 +367,128 @@ private fun ChatPage(
 @Composable
 private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String) -> Unit) {
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = modifier
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(Color(0xFF0D1A2B), Color(0xFF091321), Color(0xFF101A31))
+                )
+            )
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 18.dp, vertical = 22.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
-            modifier = Modifier.size(76.dp),
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.primaryContainer
+            modifier = Modifier.size(82.dp),
+            shape = RoundedCornerShape(27.dp),
+            color = Color(0xFF292A55)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text("✦", fontSize = 38.sp, color = MaterialTheme.colorScheme.primary)
+                Icon(
+                    Icons.Filled.AutoAwesome,
+                    contentDescription = "نشان اطلس",
+                    tint = Color(0xFFB9B2FF),
+                    modifier = Modifier.size(43.dp)
+                )
             }
         }
-        Spacer(Modifier.height(20.dp))
-        Text("سلام، من اطلس هستم", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(16.dp))
+        Text("مرکز فرماندهی اطلس", fontSize = 12.sp, color = Color(0xFF70DCCE), fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(7.dp))
+        Text("سلام، من اطلس هستم", style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold, color = Color(0xFFF2F6FF))
         Spacer(Modifier.height(8.dp))
         Text(
-            "دستیار هوشمند شما برای نوشتن، یادگیری، تحقیق و برنامه‌نویسی.",
+            "یک فضای هوشمند برای گفتگو، خلق محتوا، یادگیری و ساختن ایده‌ها.",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color(0xFFA5B6CC)
         )
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(18.dp))
+        Surface(
+            shape = RoundedCornerShape(50.dp),
+            color = Color(0xFF173B42),
+            modifier = Modifier.padding(bottom = 22.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(Modifier.size(7.dp).background(Color(0xFFFFC66D), CircleShape))
+                Spacer(Modifier.width(8.dp))
+                Text("نسخه ساختاری • اتصال سرویس‌ها در حال آماده‌سازی",
+                    color = Color(0xFFB8E9E2), fontSize = 10.sp)
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            AtlasToolCard(Icons.Filled.ChatBubbleOutline, "چت هوشمند", "گفتگو و پاسخ‌گویی", Color(0xFF8F86FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Image, "ساخت تصویر", "خلق تصویر با هوش مصنوعی", Color(0xFF62B8FF), Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            AtlasToolCard(Icons.Filled.Movie, "ساخت ویدیو", "تبدیل ایده به ویدیو", Color(0xFFFFB86B), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Mic, "دستیار صوتی", "گفتار و شنیدن پاسخ", Color(0xFF5ED9C8), Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            AtlasToolCard(Icons.Filled.Code, "برنامه‌نویسی", "کدنویسی و عیب‌یابی", Color(0xFF79A9FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Description, "تحلیل اسناد", "فایل و محتوای متنی", Color(0xFFE2A7FF), Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            AtlasToolCard(Icons.Filled.TravelExplore, "تحقیق وب", "جستجو و بررسی منابع", Color(0xFF62D5B2), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Psychology, "تحلیل تخصصی", "یادگیری و حل مسئله", Color(0xFFFFD078), Modifier.weight(1f))
+        }
+
+        Spacer(Modifier.height(23.dp))
+        Text("شروع سریع", modifier = Modifier.fillMaxWidth(),
+            color = Color(0xFFEAF1FC), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(10.dp))
         listOf(
-            Triple("✎", "نوشتن و ترجمه", "کمک برای نگارش و ترجمه"),
-            Triple("⌘", "برنامه‌نویسی", "توضیح کد و پیدا کردن خطا"),
-            Triple("◇", "یادگیری و تحقیق", "توضیح موضوعات و خلاصه‌سازی"),
-            Triple("✧", "ایده‌پردازی", "تبدیل ایده‌ها به برنامه")
+            Triple("✎", "نوشتن و ترجمه", "متن حرفه‌ای بنویس یا ترجمه کن"),
+            Triple("⌘", "برنامه‌نویسی", "کد را بررسی و خطاها را پیدا کن"),
+            Triple("◇", "یادگیری و تحقیق", "یک موضوع را مرحله‌به‌مرحله بررسی کن")
         ).forEach { option ->
             SuggestionCard(option.first, option.second, option.third) {
                 onPromptClick("می‌خواهم در بخش " + option.second + " کمک بگیرم.")
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(9.dp))
+        }
+        Text("قابلیت‌های نمایشی تا زمان اتصال و آزمایش سرویس مربوطه فعال نیستند.",
+            color = Color(0xFF8195AE), fontSize = 10.sp,
+            modifier = Modifier.padding(top = 5.dp, bottom = 12.dp))
+    }
+}
+
+@Composable
+private fun AtlasToolCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(112.dp),
+        shape = RoundedCornerShape(19.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF14243A))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(11.dp), color = tint.copy(alpha = 0.14f)) {
+                    Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
+                        Icon(icon, contentDescription = title, tint = tint, modifier = Modifier.size(21.dp))
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                Text("آماده‌سازی", fontSize = 8.sp, color = Color(0xFF91A5BF))
+            }
+            Column {
+                Text(title, color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Text(subtitle, color = Color(0xFF91A5BF), fontSize = 9.sp)
+            }
         }
     }
 }
