@@ -1,50 +1,49 @@
 # ATLAS CONNECT — Integration architecture
 
-## Current prototype
-The Android app and web preview include an **اتصال برنامه‌ها / ATLAS CONNECT** directory with GitHub, Gmail, Google Drive, Supabase, and Google Calendar entries. The user can inspect each provider's connection prerequisites. All providers are deliberately shown as **not connected**.
+## Gmail: first practical Android integration
 
-This is a working UI prototype only. It does not perform OAuth, request provider permissions, store credentials, or call external provider APIs.
+The Android app has a real Gmail read-only integration path in source code, not just a decorative connection card.
 
-## Secure implementation path
-1. Register an OAuth application separately for each provider and configure exact redirect URIs.
-2. Start authorization from the app using the provider's supported OAuth flow (Authorization Code + PKCE where supported).
-3. Complete code exchange and token refresh only on a trusted backend. Never embed client secrets, provider access tokens, refresh tokens, or service-role keys in the Android APK or web JavaScript.
-4. Store per-user encrypted credentials in a dedicated server-side secret/credential store. Do not store user OAuth tokens in a shared global environment secret.
-5. Expose narrow server actions for each integration. Enforce user identity, scopes, ownership, rate limits, audit events, and token revocation.
-6. Require explicit confirmation for side-effecting actions such as sending email, deleting files, or modifying repositories.
-7. Provide disconnect/revoke controls and delete stored credentials on disconnect.
+### What is implemented
+- Google Identity Services `AuthorizationClient` requests the minimum scope currently needed: `https://www.googleapis.com/auth/gmail.readonly`.
+- After the user grants consent, ATLAS calls the Gmail REST API and fetches up to 8 messages from the inbox, including sender, subject, date metadata, and snippet.
+- The Integrations page displays the fetched messages.
+- The main chat recognises direct Gmail-check requests in Persian or English (for example, «ایمیل‌های جدیدم را بررسی کن» / “check my Gmail”) and calls the same Gmail API path. The result is written back as an assistant message in the local conversation.
+- The chat history is stored locally on the device using the app's existing private chat storage.
+- The access token is held in Activity memory only. It is not written to SharedPreferences, Supabase, or GitHub.
+- The current pilot is read-only: it does not send, draft, delete, modify, or archive email.
 
-## First practical integration
-GitHub is the recommended first integration because the app can demonstrate repository listing and read-only file inspection before adding write permissions. Start with minimum read-only scopes. Add write scopes only after a separate review and explicit approval.
+### Important limitations
+- The source changes have not yet been compiled or tested on a physical Android device. Do not describe the integration as verified until an APK is built, installed, authorized, and successfully retrieves real inbox data.
+- The Android authorization flow can request a fresh access token again while the user's Google grant remains active. Google access tokens are short-lived (about one hour); server-side offline access would require a separate secure refresh-token architecture.
+- The current chat understands a narrow set of explicit Gmail-check phrases. It is not yet a general natural-language AI agent and does not connect arbitrary Gmail content to an LLM for semantic reasoning.
+- “Clear connection from this session” removes the in-memory token from this Activity. It does not by itself revoke the Google consent grant; revoke ATLAS AI from the user's Google Account security settings to remove the grant.
+- A public release using Gmail user-data scopes may require Google's OAuth verification and additional compliance steps. Development/testing and personal-use exceptions depend on Google's current rules.
 
-## Current blockers
-- No OAuth client IDs, redirect URIs, or provider applications have been registered for ATLAS.
-- No authenticated integration backend or per-user credential store is implemented.
-- No provider connection has been tested.
-- Supabase production functions, database tables, authentication, and user records have not been changed as part of this UI prototype.
+## Google Cloud setup required before the first device test
+1. Create or select a Google Cloud project.
+2. Enable the Gmail API for that project.
+3. Configure the OAuth consent screen and add the testing Google account as a test user if the app is in Testing mode.
+4. Create an Android OAuth client using the exact package name `com.hooshmasnooi.app` and the SHA-1 fingerprint of the signing certificate used for the APK. Debug and release certificates have different fingerprints.
+5. Build and install an APK signed with that matching certificate.
+6. Open **اتصال برنامه‌ها**, tap **اتصال حساب Gmail با Google**, select the test account, and approve read-only Gmail access.
+7. In the integration page, confirm that messages load. Then open the main chat and send «ایمیل‌های جدیدم را بررسی کن». Confirm that ATLAS returns the same inbox data as an assistant message.
 
-## Test checklist before claiming a connection works
-- OAuth consent and callback succeed on Android and web.
-- Tokens are absent from app logs, local preferences, GitHub, and client responses.
-- Only the selected user's resources are accessible.
-- Revocation/disconnect invalidates stored credentials.
-- Read-only scopes cannot perform write actions.
-- Side effects require confirmation and are audited.
+## Other integrations
 
-## Gmail Android read-only pilot (implemented in source)
-- Android now uses Google Identity Services AuthorizationClient and requests only `https://www.googleapis.com/auth/gmail.readonly`.
-- After user consent, the app calls Gmail API to list up to 8 inbox messages and fetch their From, Subject, Date metadata and snippet.
-- The short-lived access token stays in Activity memory only; it is not written to SharedPreferences, Supabase, or GitHub.
-- The pilot currently has no server-side refresh-token flow. Reauthorization may be required in a later session; do not claim persistent/offline access.
-- Sending, deleting, modifying, or drafting email is not enabled.
+GitHub, Google Drive, Supabase, and Google Calendar remain directory entries only. Their OAuth flows, per-user credential storage, provider API calls, and tests have not been implemented.
 
-### Google Cloud setup required before the first device test
-1. Create/select a Google Cloud project and enable Gmail API.
-2. Configure the OAuth consent screen. While testing, add the owner's Google account as a test user if the app is in Testing mode.
-3. Create an OAuth client of type Android for package `com.hooshmasnooi.app` using the SHA-1 certificate fingerprint of the APK being tested (debug and release fingerprints differ).
-4. Install a build signed with that matching certificate, tap **اتصال حساب Gmail با Google**, and approve the read-only Gmail permission.
-5. Confirm the app reports the number of inbox messages fetched. Gmail `gmail.readonly` is a restricted scope and Google verification/security requirements apply before broad public release.
+## Security boundaries
 
-Official references:
-- https://developer.android.com/identity/authorization
-- https://developers.google.com/workspace/gmail/api/auth/scopes
+- Never embed OAuth client secrets, refresh tokens, service-role keys, or provider API secrets in the Android APK or web JavaScript.
+- Do not store user Gmail tokens in a shared global environment secret or a shared database record.
+- Any future server-side token storage must be per-user, encrypted, access-controlled, revocable, and tied to a verified app user.
+- Keep Gmail scopes minimal and request permissions only when the user invokes the feature.
+- Side-effecting actions such as sending or deleting email must require a separate implementation review and explicit user confirmation.
+- No Supabase database, authentication, RLS, or Edge Function changes were made for this Gmail chat integration.
+
+## Official references
+- Android authorization: https://developer.android.com/identity/authorization
+- AuthorizationClient API: https://developers.google.com/android/reference/com/google/android/gms/auth/api/identity/AuthorizationClient
+- Gmail OAuth scopes: https://developers.google.com/workspace/gmail/api/auth/scopes
+- OAuth verification: https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification
