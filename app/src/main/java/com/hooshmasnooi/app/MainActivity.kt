@@ -106,13 +106,6 @@ private fun AssistantScreen() {
         val text = rawText.trim()
         if (text.isEmpty()) return
         messages.add(ChatMessage(nextId++, text, true))
-        messages.add(
-            ChatMessage(
-                nextId++,
-                "پیام شما ثبت شد. اتصال به موتور هوش مصنوعی در مرحله بعد فعال می‌شود؛ در این نسخه هنوز پاسخی از مدل دریافت نمی‌شود.",
-                false
-            )
-        )
         input = ""
     }
 
