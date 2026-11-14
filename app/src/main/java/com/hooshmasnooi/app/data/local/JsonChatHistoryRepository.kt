@@ -101,6 +101,12 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
             }
         }
 
+    override suspend fun deleteAllConversations() = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            writeRoot(JSONObject().put(KEY_CONVERSATIONS, JSONArray()))
+        }
+    }
+
     private fun readRoot(): JSONObject {
         if (!file.exists()) return JSONObject().put(KEY_CONVERSATIONS, JSONArray())
         return try {
