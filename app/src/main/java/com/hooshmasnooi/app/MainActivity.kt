@@ -1,6 +1,17 @@
 package com.hooshmasnooi.app
 
 import android.os.Bundle
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.AuthorizationResult
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.common.api.Scope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -101,8 +112,81 @@ private val atlasPages = listOf(
 )
 
 class MainActivity : ComponentActivity() {
+    private lateinit var gmailAuthorizationLauncher: ActivityResultLauncher<IntentSenderRequest>
+    private val gmailScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    var gmailStatus by mutableStateOf("حساب Gmail هنوز متصل نشده است.")
+        private set
+    var gmailMessages by mutableStateOf<List<String>>(emptyList())
+        private set
+    var gmailLoading by mutableStateOf(false)
+        private set
+    private var gmailAccessToken: String? = null
+
+    fun connectGmail() {
+        gmailStatus = "در حال درخواست اجازه از Google..."
+        val request = AuthorizationRequest.builder()
+            .setRequestedScopes(listOf(Scope("https://www.googleapis.com/auth/gmail.readonly")))
+            .build()
+        Identity.getAuthorizationClient(this).authorize(request)
+            .addOnSuccessListener { result ->
+                if (result.hasResolution() && result.pendingIntent != null) {
+                    gmailAuthorizationLauncher.launch(IntentSenderRequest.Builder(result.pendingIntent!!.intentSender).build())
+                } else {
+                    finishGmailAuthorization(result)
+                }
+            }
+            .addOnFailureListener { error ->
+                gmailStatus = "اتصال Gmail ناموفق بود: ${error.localizedMessage ?: "خطای نامشخص"}"
+            }
+    }
+
+    private fun finishGmailAuthorization(result: AuthorizationResult) {
+        val token = result.accessToken
+        if (token.isNullOrBlank()) {
+            gmailStatus = "مجوز Gmail دریافت نشد."
+            return
+        }
+        gmailAccessToken = token
+        loadRecentGmail()
+    }
+
+    fun loadRecentGmail() {
+        val token = gmailAccessToken
+        if (token.isNullOrBlank()) {
+            gmailStatus = "ابتدا حساب Gmail را متصل کن."
+            return
+        }
+        gmailLoading = true
+        gmailStatus = "در حال دریافت ایمیل‌های اخیر..."
+        gmailScope.launch {
+            try {
+                gmailMessages = GmailApi.latestInbox(token)
+                gmailStatus = if (gmailMessages.isEmpty()) "اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد."
+                    else "اتصال موفق است؛ ${gmailMessages.size} ایمیل اخیر دریافت شد."
+            } catch (error: Exception) {
+                gmailStatus = "دریافت ایمیل ناموفق بود: ${error.localizedMessage ?: "خطای شبکه یا مجوز"}"
+            } finally {
+                gmailLoading = false
+            }
+        }
+    }
+
+    fun disconnectGmail() {
+        gmailAccessToken = null
+        gmailMessages = emptyList()
+        gmailStatus = "توکن موقت از حافظه برنامه پاک شد. برای لغو کامل مجوز، دسترسی ATLAS AI را از تنظیمات حساب Google حذف کن."
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        gmailAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            try {
+                val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(result.data)
+                finishGmailAuthorization(authorization)
+            } catch (error: Exception) {
+                gmailStatus = "مجوز Gmail تکمیل نشد: ${error.localizedMessage ?: "لغو یا خطای Google"}"
+            }
+        }
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
@@ -120,7 +204,14 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    AtlasApp()
+                    AtlasApp(
+                    gmailStatus = gmailStatus,
+                    gmailMessages = gmailMessages,
+                    gmailLoading = gmailLoading,
+                    onConnectGmail = { connectGmail() },
+                    onRefreshGmail = { loadRecentGmail() },
+                    onDisconnectGmail = { disconnectGmail() }
+                )
                 }
             }
         }
@@ -129,7 +220,14 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AtlasApp() {
+private fun AtlasApp(
+    gmailStatus: String,
+    gmailMessages: List<String>,
+    gmailLoading: Boolean,
+    onConnectGmail: () -> Unit,
+    onRefreshGmail: () -> Unit,
+    onDisconnectGmail: () -> Unit
+) {
     val appContext = LocalContext.current.applicationContext
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
@@ -292,7 +390,11 @@ private fun AtlasApp() {
                     ),
                     Modifier.fillMaxSize().padding(padding)
                 )
-                "integrations" -> IntegrationsPage(Modifier.fillMaxSize().padding(padding))
+                "integrations" -> IntegrationsPage(
+                    gmailStatus, gmailMessages, gmailLoading,
+                    onConnectGmail, onRefreshGmail, onDisconnectGmail,
+                    Modifier.fillMaxSize().padding(padding)
+                )
                 "profile" -> ProfilePage(Modifier.fillMaxSize().padding(padding))
                 "plans" -> PlansPage(Modifier.fillMaxSize().padding(padding))
                 "settings" -> SettingsPage(
@@ -525,54 +627,59 @@ private fun SuggestionCard(icon: String, title: String, description: String, onC
 
 
 @Composable
-private fun IntegrationsPage(modifier: Modifier = Modifier) {
-    var selectedService by remember { mutableStateOf<String?>(null) }
-    val services = listOf(
-        Triple("GitHub", "بررسی مخزن، خواندن فایل‌ها و کمک به توسعه کد", "OAuth لازم است"),
-        Triple("Gmail", "جست‌وجو و خلاصه‌سازی ایمیل‌ها؛ ارسال فقط با تأیید", "OAuth لازم است"),
-        Triple("Google Drive", "یافتن و تحلیل فایل‌های انتخاب‌شده", "OAuth لازم است"),
-        Triple("Supabase", "مدیریت پروژه و عملیات مجاز از طریق بک‌اند امن", "توکن سمت سرور لازم است"),
-        Triple("Google Calendar", "خواندن برنامه‌ها و مدیریت رویدادها با اجازه", "OAuth لازم است")
-    )
+private fun IntegrationsPage(
+    gmailStatus: String,
+    gmailMessages: List<String>,
+    gmailLoading: Boolean,
+    onConnectGmail: () -> Unit,
+    onRefreshGmail: () -> Unit,
+    onDisconnectGmail: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("اتصال برنامه‌ها", "سرویس‌های خارجی را به اطلس وصل کن و دسترسی‌ها را خودت کنترل کن.")
-        InfoCard("مرکز اتصال ATLAS CONNECT", "در این نسخه، فهرست و مسیر آماده‌سازی اتصال‌ها فعال است؛ هنوز هیچ حسابی متصل نشده است.")
-        Spacer(Modifier.height(12.dp))
-        services.forEach { service ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
-            ) {
-                Column(Modifier.padding(15.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(service.first, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                        Text("متصل نیست", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Spacer(Modifier.height(5.dp))
-                    Text(service.second, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    Spacer(Modifier.height(9.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(service.third, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { selectedService = service.first }) { Text("جزئیات اتصال") }
-                    }
+        PageTitle("اتصال برنامه‌ها", "اتصال واقعی Gmail با مجوز فقط‌خواندنی در این نسخه آماده آزمایش است.")
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Gmail", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                    Text(if (gmailMessages.isNotEmpty()) "داده دریافت شد" else "اتصال آزمایشی",
+                        color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("اطلس می‌تواند ۸ ایمیل اخیر صندوق ورودی را بخواند و موضوع، فرستنده و خلاصه اولیه آن‌ها را نمایش دهد.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(12.dp))
+                Text(gmailStatus, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = onConnectGmail, modifier = Modifier.fillMaxWidth()) {
+                    Text("اتصال حساب Gmail با Google")
+                }
+                Button(onClick = onRefreshGmail, enabled = !gmailLoading && gmailMessages.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth()) {
+                    Text(if (gmailLoading) "در حال دریافت..." else "دریافت دوباره ایمیل‌ها")
+                }
+                TextButton(onClick = onDisconnectGmail, modifier = Modifier.fillMaxWidth()) {
+                    Text("پاک‌کردن اتصال از این نشست")
                 }
             }
-            Spacer(Modifier.height(10.dp))
         }
-        InfoCard("امنیت", "رمز عبور و توکن سرویس‌ها نباید داخل گوشی یا GitHub ذخیره شوند. اتصال واقعی باید از طریق OAuth و بک‌اند امن انجام شود؛ دسترسی‌ها باید قابل لغو باشند.")
-    }
-    selectedService?.let { service ->
-        AlertDialog(
-            onDismissRequest = { selectedService = null },
-            title = { Text("آماده‌سازی اتصال $service") },
-            text = {
-                Text("برای اتصال واقعی $service باید برنامه OAuth ثبت شود، شناسه عمومی و تنظیمات بازگشت تعریف شوند و تبادل توکن در سمت سرور انجام شود. در این نسخه هنوز اتصال برقرار نمی‌شود و هیچ اطلاعات ورود دریافت نمی‌کنیم.")
-            },
-            confirmButton = {
-                TextButton(onClick = { selectedService = null }) { Text("متوجه شدم") }
+        Spacer(Modifier.height(14.dp))
+        Text("ایمیل‌های اخیر", fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(8.dp))
+        if (gmailMessages.isEmpty()) {
+            EmptyCard("هنوز ایمیلی دریافت نشده", "پس از اتصال Google و تأیید مجوز، ایمیل‌های اخیر اینجا نمایش داده می‌شوند.")
+        } else {
+            gmailMessages.forEachIndexed { index, item ->
+                InfoCard("ایمیل " + (index + 1), item)
+                Spacer(Modifier.height(8.dp))
             }
-        )
+        }
+        InfoCard("مجوز و حریم خصوصی", "فقط gmail.readonly درخواست می‌شود. اطلس نمی‌تواند ایمیل ارسال یا حذف کند. توکن دسترسی فقط در حافظه همین اجرای برنامه است و در GitHub یا دیتابیس ذخیره نمی‌شود. برای لغو کامل، مجوز ATLAS AI را از حساب Google حذف کن.")
+        InfoCard("سایر سرویس‌ها", "GitHub، Google Drive، Supabase و Calendar در مرحله بعدی اتصال واقعی می‌شوند.")
     }
 }
 
