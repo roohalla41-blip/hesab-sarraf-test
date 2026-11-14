@@ -94,7 +94,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.data.local.ChatStorage
-import kotlinx.coroutines.launch
 
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
 
