@@ -70,7 +70,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hooshmasnooi.app.data.local.JsonChatHistoryRepository
 import com.hooshmasnooi.app.domain.model.ChatMessage
+import com.hooshmasnooi.app.domain.model.Conversation
+import com.hooshmasnooi.app.domain.repository.ChatHistoryRepository
+import java.util.UUID
 import kotlinx.coroutines.launch
 
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
@@ -107,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    AtlasApp()
+                    AtlasApp(JsonChatHistoryRepository(applicationContext))
                 }
             }
         }
@@ -116,23 +120,78 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AtlasApp() {
+private fun AtlasApp(historyRepository: ChatHistoryRepository) {
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
     var darkPreview by remember { mutableStateOf(false) }
     var languagePreview by remember { mutableStateOf("فارسی") }
-    var nextId by remember { mutableStateOf(1L) }
+    var nextId by remember { mutableStateOf(System.currentTimeMillis()) }
+    var currentConversationId by remember { mutableStateOf<String?>(null) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
+    val conversations = remember { mutableStateListOf<Conversation>() }
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     fun sendMessage(rawText: String) {
         val cleanText = rawText.trim()
-        if (cleanText.isNotEmpty()) {
-            messages.add(ChatMessage(nextId++, cleanText, true))
-            input = ""
+        if (cleanText.isBlank()) return
+
+        val now = System.currentTimeMillis()
+        val conversationId = currentConversationId ?: UUID.randomUUID().toString().also {
+            currentConversationId = it
+        }
+        val existing = conversations.firstOrNull { it.id == conversationId }
+        val message = ChatMessage(nextId++, cleanText, true)
+        val conversation = Conversation(
+            id = conversationId,
+            title = existing?.title ?: cleanText.take(48),
+            createdAtEpochMillis = existing?.createdAtEpochMillis ?: now,
+            updatedAtEpochMillis = now,
+            messageCount = existing?.messageCount ?: 0,
+            isPinned = existing?.isPinned ?: false
+        )
+
+        messages.add(message)
+        input = ""
+        scope.launch {
+            runCatching {
+                historyRepository.saveConversation(conversation)
+                historyRepository.saveMessage(conversationId, message)
+                val refreshed = historyRepository.getConversations()
+                conversations.clear()
+                conversations.addAll(refreshed)
+            }
+        }
+    }
+
+    fun openConversation(conversationId: String) {
+        scope.launch {
+            runCatching {
+                val savedMessages = historyRepository.getMessages(conversationId)
+                messages.clear()
+                messages.addAll(savedMessages)
+                currentConversationId = conversationId
+                nextId = (savedMessages.maxOfOrNull { it.id } ?: System.currentTimeMillis()) + 1
+                input = ""
+                currentPage = "chat"
+            }
+        }
+    }
+
+    LaunchedEffect(historyRepository) {
+        runCatching {
+            val saved = historyRepository.getConversations()
+            conversations.clear()
+            conversations.addAll(saved)
+            saved.firstOrNull()?.let { latest ->
+                val savedMessages = historyRepository.getMessages(latest.id)
+                messages.clear()
+                messages.addAll(savedMessages)
+                currentConversationId = latest.id
+                nextId = (savedMessages.maxOfOrNull { it.id } ?: System.currentTimeMillis()) + 1
+            }
         }
     }
 
@@ -192,6 +251,7 @@ private fun AtlasApp() {
                     actions = {
                         IconButton(onClick = {
                             messages.clear()
+                            currentConversationId = null
                             input = ""
                             currentPage = "chat"
                         }) {
@@ -253,7 +313,7 @@ private fun AtlasApp() {
                 "chat" -> ChatPage(messages, listState, Modifier.fillMaxSize().padding(padding)) {
                     sendMessage(it)
                 }
-                "history" -> HistoryPage(messages, Modifier.fillMaxSize().padding(padding))
+                "history" -> HistoryPage(conversations, Modifier.fillMaxSize().padding(padding), ::openConversation)
                 "explore" -> FeaturePage(
                     "کاوش دستیارها",
                     "حالت‌های کاری تخصصی برای نیازهای مختلف.",
@@ -310,9 +370,10 @@ private fun AtlasApp() {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("ساختار صفحات: در حال تکمیل")
+                    Text("تاریخچه گفت‌وگو: ذخیره محلی روی دستگاه فعال است")
                     Text("زبان پیش‌نمایش: " + languagePreview)
                     Text("هوش مصنوعی: هنوز متصل نشده")
-                    Text("دیتابیس و حساب آنلاین: هنوز متصل نشده")
+                    Text("دیتابیس ابری و حساب آنلاین: هنوز متصل نشده")
                     Text("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد")
                     Text("هیچ APK یا Build در این مرحله اجرا نشده است.")
                 }
@@ -419,19 +480,46 @@ private fun SuggestionCard(icon: String, title: String, description: String, onC
 }
 
 @Composable
-private fun HistoryPage(messages: List<ChatMessage>, modifier: Modifier = Modifier) {
+private fun HistoryPage(
+    conversations: List<Conversation>,
+    modifier: Modifier = Modifier,
+    onConversationClick: (String) -> Unit
+) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تاریخچه گفت‌وگوها", "پیام‌های این نشست در حافظه موقت نمایش داده می‌شوند.")
-        if (messages.isEmpty()) {
-            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با شروع یک گفت‌وگو، پیام‌های این نشست اینجا دیده می‌شوند.")
+        PageTitle(
+            "تاریخچه گفت‌وگوها",
+            "گفت‌وگوها به‌صورت محلی در حافظه خصوصی برنامه ذخیره می‌شوند."
+        )
+        if (conversations.isEmpty()) {
+            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال اولین پیام، گفت‌وگوی شما اینجا ذخیره می‌شود.")
         } else {
-            messages.forEach { message ->
-                InfoCard("پیام " + message.id, message.text)
-                Spacer(Modifier.height(8.dp))
+            conversations.forEach { conversation ->
+                Card(
+                    onClick = { onConversationClick(conversation.id) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    )
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(conversation.title, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(5.dp))
+                        Text(
+                            "${conversation.messageCount} پیام",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             }
         }
-        Text("ذخیره دائمی و همگام‌سازی ابری هنوز فعال نیست.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        Text(
+            "این تاریخچه فقط روی همین دستگاه است؛ همگام‌سازی ابری هنوز فعال نیست.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
