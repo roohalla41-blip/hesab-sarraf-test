@@ -9,6 +9,14 @@
 6. Do not place secrets, credentials, or sensitive user content in application logs.
 7. Treat uploaded files as private user data; validate and restrict access.
 
+## Current local history behavior
+- Conversation history is stored in a JSON file under Android's private internal app storage.
+- The current implementation is device-local and does not sync to Supabase or another cloud service.
+- Android app sandboxing restricts ordinary access by other apps; this implementation does not add application-level encryption.
+- Users should not put passwords, API keys, or other secrets into chat messages.
+- The app currently limits retention to the newest 40 conversations and 300 messages per conversation.
+- In-app deletion and export controls are not implemented yet. Clearing app data or uninstalling the app removes this local file.
+
 ## Account and session principles
 - Authentication is not implemented in the current scaffold.
 - Session tokens, when introduced, must use platform-appropriate secure storage.
