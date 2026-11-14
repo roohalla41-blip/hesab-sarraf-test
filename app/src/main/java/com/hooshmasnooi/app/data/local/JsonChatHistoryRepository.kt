@@ -12,6 +12,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * JSON-backed conversation history stored in the app's private internal files directory.
@@ -22,7 +25,9 @@ import java.io.FileOutputStream
  * API keys, or other secrets in conversation messages.
  */
 class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
-    private val file = File(context.applicationContext.filesDir, HISTORY_FILE)
+    private val directory = context.applicationContext.filesDir
+    private val file = File(directory, HISTORY_FILE)
+    private val corruptBackup = File(directory, CORRUPT_BACKUP_FILE)
     private val mutex = Mutex()
 
     override suspend fun getConversations(): List<Conversation> = withContext(Dispatchers.IO) {
@@ -56,7 +61,6 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                     encoded.put(KEY_MESSAGES, JSONArray())
                     items.put(encoded)
                 }
-                // Keep the newest 40 conversations; never silently grow without bound.
                 root.put(KEY_CONVERSATIONS, trimConversations(items))
                 writeRoot(root)
             }
@@ -103,9 +107,17 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
 
     override suspend fun deleteAllConversations() = withContext(Dispatchers.IO) {
         mutex.withLock {
+            // Persist the empty history first. If this fails, keep the recovery copy.
             writeRoot(JSONObject().put(KEY_CONVERSATIONS, JSONArray()))
+            if (corruptBackup.exists() && !corruptBackup.delete()) {
+                throw IllegalStateException("Could not remove the damaged-history recovery copy")
+            }
+            tempFile.delete()
         }
     }
+
+    private val tempFile: File
+        get() = File(directory, TEMP_FILE_NAME)
 
     private fun readRoot(): JSONObject {
         if (!file.exists()) return JSONObject().put(KEY_CONVERSATIONS, JSONArray())
@@ -116,22 +128,38 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                 }
             }
         } catch (_: Exception) {
-            // Preserve the damaged file for diagnosis rather than overwriting it.
-            val backup = File(file.parentFile, "$HISTORY_FILE.corrupt")
-            if (!backup.exists()) file.copyTo(backup, overwrite = false)
+            // Preserve the damaged file for recovery; clear-all explicitly removes this copy.
+            if (!corruptBackup.exists()) file.copyTo(corruptBackup, overwrite = false)
             JSONObject().put(KEY_CONVERSATIONS, JSONArray())
         }
     }
 
     private fun writeRoot(root: JSONObject) {
-        val temp = File(file.parentFile, "$HISTORY_FILE.tmp")
-        FileOutputStream(temp).use { output ->
-            output.write(root.toString().toByteArray(Charsets.UTF_8))
+        val bytes = root.toString().toByteArray(Charsets.UTF_8)
+        FileOutputStream(tempFile).use { output ->
+            output.write(bytes)
             output.fd.sync()
         }
-        if (!temp.renameTo(file)) {
-            file.writeText(temp.readText(Charsets.UTF_8), Charsets.UTF_8)
-            temp.delete()
+
+        try {
+            try {
+                Files.move(
+                    tempFile.toPath(),
+                    file.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (_: AtomicMoveNotSupportedException) {
+                // Same-directory replacement avoids the old unsafe truncate-and-rewrite fallback.
+                Files.move(
+                    tempFile.toPath(),
+                    file.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            }
+        } catch (failure: Exception) {
+            // Keep the previous history intact and surface the failure to the UI.
+            throw failure
         }
     }
 
@@ -198,6 +226,8 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
 
     private companion object {
         const val HISTORY_FILE = "atlas_chat_history.json"
+        const val TEMP_FILE_NAME = "atlas_chat_history.json.tmp"
+        const val CORRUPT_BACKUP_FILE = "atlas_chat_history.json.corrupt"
         const val KEY_CONVERSATIONS = "conversations"
         const val KEY_MESSAGES = "messages"
         const val MAX_CONVERSATIONS = 40
