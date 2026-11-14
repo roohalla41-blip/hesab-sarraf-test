@@ -127,8 +127,11 @@ class MainActivity : ComponentActivity() {
     var gmailLoading by mutableStateOf(false)
         private set
     private var gmailAccessToken: String? = null
+    private var pendingGmailAuthorizationAction: (() -> Unit)? = null
+    private var pendingGmailChatResult: ((String) -> Unit)? = null
 
-    fun connectGmail() {
+    fun connectGmail(afterAuthorization: (() -> Unit)? = null) {
+        pendingGmailAuthorizationAction = afterAuthorization ?: { loadRecentGmail() }
         gmailStatus = "در حال درخواست اجازه از Google..."
         val request = AuthorizationRequest.builder()
             .setRequestedScopes(listOf(Scope("https://www.googleapis.com/auth/gmail.readonly")))
@@ -139,10 +142,16 @@ class MainActivity : ComponentActivity() {
                     gmailAuthorizationLauncher.launch(IntentSenderRequest.Builder(result.pendingIntent!!.intentSender).build())
                 } else {
                     finishGmailAuthorization(result)
+                    val action = pendingGmailAuthorizationAction
+                    pendingGmailAuthorizationAction = null
+                    action?.invoke()
                 }
             }
             .addOnFailureListener { error ->
+                pendingGmailAuthorizationAction = null
                 gmailStatus = "اتصال Gmail ناموفق بود: ${error.localizedMessage ?: "خطای نامشخص"}"
+                pendingGmailChatResult?.invoke(gmailStatus)
+                pendingGmailChatResult = null
             }
     }
 
@@ -153,7 +162,6 @@ class MainActivity : ComponentActivity() {
             return
         }
         gmailAccessToken = token
-        loadRecentGmail()
     }
 
     fun loadRecentGmail() {
@@ -180,7 +188,13 @@ class MainActivity : ComponentActivity() {
     fun readGmailForChat(onResult: (String) -> Unit) {
         val token = gmailAccessToken
         if (token.isNullOrBlank()) {
-            onResult("برای بررسی ایمیل‌ها، ابتدا از منوی «اتصال برنامه‌ها» حساب Gmail را متصل کن.")
+            pendingGmailChatResult = onResult
+            gmailStatus = "در حال بازیابی مجوز Gmail برای بررسی ایمیل‌ها..."
+            connectGmail {
+                val callback = pendingGmailChatResult
+                pendingGmailChatResult = null
+                if (callback != null) readGmailForChat(callback)
+            }
             return
         }
         gmailLoading = true
@@ -231,10 +245,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         gmailAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             try {
+                if (result.resultCode != RESULT_OK) {
+                    throw IllegalStateException("درخواست مجوز Google لغو شد.")
+                }
                 val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(result.data)
                 finishGmailAuthorization(authorization)
+                val action = pendingGmailAuthorizationAction
+                pendingGmailAuthorizationAction = null
+                action?.invoke()
             } catch (error: Exception) {
+                pendingGmailAuthorizationAction = null
                 gmailStatus = "مجوز Gmail تکمیل نشد: ${error.localizedMessage ?: "لغو یا خطای Google"}"
+                pendingGmailChatResult?.invoke(gmailStatus)
+                pendingGmailChatResult = null
             }
         }
         setContent {
