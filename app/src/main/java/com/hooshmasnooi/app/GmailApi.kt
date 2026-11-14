@@ -31,7 +31,8 @@ object GmailApi {
             }
             val subject = header("Subject").ifBlank { "(بدون موضوع)" }
             val from = header("From").ifBlank { "فرستنده نامشخص" }
-            "موضوع: $subject\nفرستنده: $from\nخلاصه: ${detail.optString("snippet")}"
+            val date = header("Date").ifBlank { "تاریخ نامشخص" }
+            "موضوع: $subject\nفرستنده: $from\nتاریخ: $date\nخلاصه: ${detail.optString("snippet")}"
         }
     }
 
