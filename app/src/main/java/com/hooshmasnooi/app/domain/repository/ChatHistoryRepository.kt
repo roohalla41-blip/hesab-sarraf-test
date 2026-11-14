@@ -3,10 +3,7 @@ package com.hooshmasnooi.app.domain.repository
 import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.domain.model.Conversation
 
-/**
- * Local conversation storage contract.
- * The implementation will be added separately from the remote AI service.
- */
+/** Local history contract, intentionally independent from cloud storage. */
 interface ChatHistoryRepository {
     suspend fun getConversations(): List<Conversation>
     suspend fun getMessages(conversationId: String): List<ChatMessage>

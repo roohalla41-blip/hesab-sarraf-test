@@ -2,10 +2,7 @@ package com.hooshmasnooi.app.data.remote
 
 import com.hooshmasnooi.app.domain.model.ChatMessage
 
-/**
- * Server-side AI boundary.
- * Provider credentials must stay on the server and must never be shipped in the Android app.
- */
+/** Server-side AI boundary. Provider credentials must never ship in the Android app. */
 interface AiGateway {
     suspend fun complete(
         messages: List<ChatMessage>,
