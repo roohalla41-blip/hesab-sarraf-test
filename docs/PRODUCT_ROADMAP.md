@@ -1,19 +1,25 @@
 # ATLAS AI — Product Roadmap
 
-## Foundation
+## Product foundation
 - [x] Brand identity and Persian-first product direction
-- [x] Android Compose scaffold
+- [x] Android Kotlin + Jetpack Compose project scaffold
 - [x] Provider-independent domain and repository contracts
 - [x] Server API, privacy, and safety design notes
-- [x] Initial language resource foundations for Persian, Dari, and English
 - [x] Feature catalog with explicit availability states
+- [x] Interactive browser preview shell for all primary product areas
 
-## Core experience
-- [ ] Complete resource-based localization throughout the UI
-- [ ] Conversation state and local-only history implementation
-- [ ] Navigation shell for chat, history, explore, tools, settings, profile, and plans
-- [ ] Accessible loading, error, empty, retry, and cancellation states
+## Core product structure
+- [x] Browser preview navigation for chat, history, explore, tools, profile, plans, settings, privacy, and help
+- [x] First-pass content and empty states for all browser preview sections
+- [x] Preview-only theme and language controls
+- [x] Clear notices for features that are not connected or operational
+- [ ] Port the complete navigation shell and section layouts into Android Compose
+- [ ] Complete resource-based localization throughout Android UI
+- [ ] Durable local-only conversation history and conversation management
+- [ ] Full chat actions: copy, edit/resend, regenerate, stop, share, and feedback
 - [ ] Attachment picker and secure local staging
+- [ ] Accessibility and responsive-layout review
+- [ ] UI tests and device-level review
 
 ## Backend integration (requires separate authorization)
 - [ ] Select AI provider and model strategy
@@ -37,4 +43,4 @@
 - [ ] Store listing, privacy disclosures, and support process
 - [ ] Build and signed release only after explicit user approval
 
-A roadmap item marked complete means the design or foundation exists; it does not imply a live production feature.
+A roadmap item marked complete means the browser preview structure exists; it does not mean the feature is operational in Android or connected to live services. No AI, database, authentication, billing, APK build, or deployment is included in this stage.
