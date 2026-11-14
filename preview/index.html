@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101d32">
+<meta name="description" content="پیش‌نمایش تعاملی ساختار برنامه ATLAS AI">
 <title>ATLAS AI | اطلس</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
@@ -21,15 +22,18 @@
     <button class="nav-item" data-panel="profile"><span>◎</span> حساب کاربری</button>
     <button class="nav-item" data-panel="plans"><span>◇</span> طرح‌های اشتراک</button>
     <button class="nav-item" data-panel="settings"><span>⚙</span> تنظیمات</button>
+    <button class="nav-item" data-panel="privacy"><span>▣</span> حریم خصوصی</button>
+    <button class="nav-item" data-panel="help"><span>?</span> راهنما و پشتیبانی</button>
     <div class="sidebar-bottom"><div class="avatar">A</div><div><b>مهمان اطلس</b><small>نسخه پیش‌نمایش</small></div><span class="dots">•••</span></div>
   </aside>
   <main class="main">
     <header class="topbar">
       <button class="mobile-menu" id="menuToggle" aria-label="منو">☰</button>
-      <div class="top-title"><span class="status-dot"></span><b id="sectionTitle">دستیار اطلس</b><small>نسخه نمایشی</small></div>
+      <div class="top-title"><span class="status-dot"></span><b id="sectionTitle">دستیار اطلس</b><small>پیش‌نمایش ساختار</small></div>
       <div class="top-actions"><button class="language" id="languageToggle">FA / EN</button><button class="icon-button" id="themeToggle" aria-label="تغییر ظاهر">◐</button></div>
     </header>
     <section class="content" id="content">
+      <div class="page-view" id="pageView" hidden></div>
       <div class="welcome" id="welcome">
         <div class="hero-symbol"><span>✦</span><i></i></div>
         <div class="eyebrow">دستیار هوشمند چندزبانه</div>
@@ -50,13 +54,13 @@
         </div>
       </div>
       <div class="messages" id="messages" hidden></div>
-      <div class="composer-wrap">
+      <div class="composer-wrap" id="composerWrap">
         <div class="composer">
-          <button class="attach" title="پیوست (در نسخه بعدی)">＋</button>
+          <button class="attach" id="attach" title="پیوست نمایشی">＋</button>
           <textarea id="prompt" rows="1" placeholder="از اطلس هر چیزی بپرس..."></textarea>
           <button class="send" id="send" aria-label="ارسال">↑</button>
         </div>
-        <div class="composer-foot"><span>✦ اطلس می‌تواند اشتباه کند؛ پاسخ‌های مهم را بررسی کن.</span><span>پیش‌نمایش رابط کاربری</span></div>
+        <div class="composer-foot"><span>✦ این پیش‌نمایش پاسخ هوش مصنوعی تولید نمی‌کند.</span><span>نسخه ساختاری</span></div>
       </div>
     </section>
     <div class="toast" id="toast" role="status"></div>
