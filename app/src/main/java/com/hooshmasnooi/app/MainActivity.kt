@@ -65,6 +65,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -126,8 +127,12 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
     var historyError by remember { mutableStateOf<String?>(null) }
-    var darkPreview by remember { mutableStateOf(false) }
-    var languagePreview by remember { mutableStateOf("فارسی") }
+    val context = LocalContext.current
+    val settings = remember(context) {
+        context.getSharedPreferences("atlas_user_settings", android.content.Context.MODE_PRIVATE)
+    }
+    var darkPreview by remember { mutableStateOf(settings.getBoolean("dark_preview", false)) }
+    var languagePreview by remember { mutableStateOf(settings.getString("language", "فارسی") ?: "فارسی") }
     var nextId by remember { mutableStateOf(System.currentTimeMillis()) }
     var currentConversationId by remember { mutableStateOf<String?>(null) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
@@ -338,6 +343,18 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                                 historyError = "حذف گفت‌وگو انجام نشد. دوباره تلاش کنید."
                             }
                         }
+                    },
+                    {
+                        scope.launch {
+                            runCatching {
+                                historyRepository.deleteAllConversations()
+                                conversations.clear()
+                                messages.clear()
+                                currentConversationId = null
+                            }.onFailure {
+                                historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                            }
+                        }
                     }
                 )
                 "explore" -> FeaturePage(
@@ -368,9 +385,15 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 "plans" -> PlansPage(Modifier.fillMaxSize().padding(padding))
                 "settings" -> SettingsPage(
                     darkPreview,
-                    { darkPreview = !darkPreview },
+                    {
+                        darkPreview = !darkPreview
+                        settings.edit().putBoolean("dark_preview", darkPreview).apply()
+                    },
                     languagePreview,
-                    { languagePreview = it },
+                    {
+                        languagePreview = it
+                        settings.edit().putString("language", it).apply()
+                    },
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "privacy" -> FeaturePage(
@@ -521,9 +544,11 @@ private fun HistoryPage(
     conversations: List<Conversation>,
     modifier: Modifier = Modifier,
     onConversationClick: (String) -> Unit,
-    onDeleteConversation: (String) -> Unit
+    onDeleteConversation: (String) -> Unit,
+    onDeleteAll: () -> Unit
 ) {
     var pendingDelete by remember { mutableStateOf<Conversation?>(null) }
+    var confirmDeleteAll by remember { mutableStateOf(false) }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle(
             "تاریخچه گفت‌وگوها",
@@ -532,6 +557,9 @@ private fun HistoryPage(
         if (conversations.isEmpty()) {
             EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال اولین پیام، گفت‌وگوی شما اینجا ذخیره می‌شود.")
         } else {
+            TextButton(onClick = { confirmDeleteAll = true }) {
+                Text("پاک‌کردن همه تاریخچه", color = MaterialTheme.colorScheme.error)
+            }
             conversations.forEach { conversation ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -570,6 +598,23 @@ private fun HistoryPage(
             "این تاریخچه فقط روی همین دستگاه است؛ همگام‌سازی ابری هنوز فعال نیست.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelSmall
+        )
+    }
+
+    if (confirmDeleteAll) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteAll = false },
+            title = { Text("پاک‌کردن همه تاریخچه؟") },
+            text = { Text("تمام گفت‌وگوها و پیام‌های ذخیره‌شده روی این دستگاه حذف می‌شوند. این کار قابل بازگشت نیست.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteAll()
+                    confirmDeleteAll = false
+                }) { Text("پاک‌کردن همه", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteAll = false }) { Text("انصراف") }
+            }
         )
     }
 
@@ -648,9 +693,13 @@ private fun SettingsPage(
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle("تنظیمات", "گزینه‌های پایه برای آماده‌سازی تجربه کاربری.")
         InfoCard("ظاهر برنامه", if (darkPreview) "حالت تاریک انتخاب شده (پیش‌نمایش)" else "حالت روشن انتخاب شده (پیش‌نمایش)")
+        Text("انتخاب ظاهر روی همین دستگاه ذخیره می‌شود؛ تغییر کامل رنگ‌بندی در مرحله بعد تکمیل می‌شود.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) { Text("تغییر حالت نمایشی") }
         Spacer(Modifier.height(12.dp))
-        InfoCard("زبان رابط", "زبان فعلی: " + language)
+        InfoCard("زبان رابط", "زبان انتخاب‌شده: " + language)
+        Text("انتخاب زبان ذخیره می‌شود؛ ترجمه کامل همه صفحه‌ها و تغییر خودکار بر اساس زبان دستگاه هنوز تکمیل نشده است.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { onLanguageChange("فارسی") }) { Text("فارسی") }
             Button(onClick = { onLanguageChange("English (planned)") }) { Text("English") }
