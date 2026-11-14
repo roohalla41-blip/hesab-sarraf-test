@@ -165,7 +165,7 @@ private fun AtlasApp() {
                     }
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "گفت‌وگوی ذخیره‌شده روی همین دستگاه",
+                        "گفت‌وگوی ذخیره‌شده در فضای برنامه",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -243,7 +243,7 @@ private fun AtlasApp() {
                             }
                         }
                         Text(
-                            "پیام‌ها به‌صورت خصوصی روی همین دستگاه ذخیره می‌شوند؛ پاسخ هوش مصنوعی هنوز فعال نیست.",
+                            "پیام‌ها در فضای اختصاصی برنامه روی همین دستگاه ذخیره می‌شوند؛ پاسخ هوش مصنوعی هنوز فعال نیست.",
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
