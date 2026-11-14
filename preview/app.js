@@ -11,5 +11,4 @@ $("#menuToggle").addEventListener("click",()=>$("#sidebar").classList.toggle("op
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#sectionTitle").textContent=b.textContent.trim();if(b.dataset.panel!=="chat")notify("بخش "+b.textContent.trim()+" در نقشه محصول قرار دارد و هنوز فعال نشده است.");else notify("صفحه گفت‌وگوی اطلس")})); 
 $("#themeToggle").addEventListener("click",()=>document.body.classList.toggle("light"));
 let english=false;$("#languageToggle").addEventListener("click",()=>{english=!english;notify(english?"English interface is planned; this preview is currently Persian.":"زبان پیش‌نمایش: فارسی")});
-$("#attach").addEventListener?.("click",()=>notify("پیوست فایل در نسخه بعدی فعال می‌شود"));
 document.querySelector(".attach").addEventListener("click",()=>notify("پیوست فایل در نسخه بعدی فعال می‌شود"));
