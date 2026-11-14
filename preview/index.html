@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101d32">
+<title>ATLAS AI | اطلس</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">✦</div><div><b>ATLAS AI</b><small>هوشمندی بدون مرز</small></div></div>
+    <button class="new-chat" id="newChat">＋ گفت‌وگوی جدید</button>
+    <div class="nav-label">فضای کاری</div>
+    <button class="nav-item active" data-panel="chat"><span>◈</span> گفت‌وگو</button>
+    <button class="nav-item" data-panel="history"><span>◷</span> تاریخچه</button>
+    <button class="nav-item" data-panel="explore"><span>✧</span> کاوش دستیارها</button>
+    <button class="nav-item" data-panel="tools"><span>⌘</span> ابزارها</button>
+    <div class="nav-label">حساب و برنامه</div>
+    <button class="nav-item" data-panel="profile"><span>◎</span> حساب کاربری</button>
+    <button class="nav-item" data-panel="plans"><span>◇</span> طرح‌های اشتراک</button>
+    <button class="nav-item" data-panel="settings"><span>⚙</span> تنظیمات</button>
+    <div class="sidebar-bottom"><div class="avatar">A</div><div><b>مهمان اطلس</b><small>نسخه پیش‌نمایش</small></div><span class="dots">•••</span></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <button class="mobile-menu" id="menuToggle" aria-label="منو">☰</button>
+      <div class="top-title"><span class="status-dot"></span><b id="sectionTitle">دستیار اطلس</b><small>نسخه نمایشی</small></div>
+      <div class="top-actions"><button class="language" id="languageToggle">FA / EN</button><button class="icon-button" id="themeToggle" aria-label="تغییر ظاهر">◐</button></div>
+    </header>
+    <section class="content" id="content">
+      <div class="welcome" id="welcome">
+        <div class="hero-symbol"><span>✦</span><i></i></div>
+        <div class="eyebrow">دستیار هوشمند چندزبانه</div>
+        <h1>سلام، من <em>اطلس</em> هستم</h1>
+        <p class="lead">ایده‌هایت را به نتیجه تبدیل کن. از نوشتن و یادگیری تا برنامه‌نویسی و تحقیق، همه‌چیز در یک فضای هوشمند.</p>
+        <div class="mode-row">
+          <button class="mode-chip selected" data-mode="عمومی">✧ عمومی</button>
+          <button class="mode-chip" data-mode="نوشتن">✎ نوشتن</button>
+          <button class="mode-chip" data-mode="یادگیری">▤ یادگیری</button>
+          <button class="mode-chip" data-mode="برنامه‌نویسی">⌘ کدنویسی</button>
+          <button class="mode-chip" data-mode="تحقیق">⌕ تحقیق</button>
+        </div>
+        <div class="suggestions">
+          <button class="suggestion" data-prompt="برای یک ایده جدید، یک برنامه عملی مرحله‌به‌مرحله طراحی کن."><span class="suggestion-icon violet">✧</span><span><b>ایده‌پردازی و برنامه‌ریزی</b><small>ایده‌ها را به برنامه عملی تبدیل کن</small></span><i>↙</i></button>
+          <button class="suggestion" data-prompt="این متن را حرفه‌ای‌تر و روان‌تر بازنویسی کن."><span class="suggestion-icon blue">✎</span><span><b>نوشتن و ترجمه</b><small>متن حرفه‌ای، روشن و روان بساز</small></span><i>↙</i></button>
+          <button class="suggestion" data-prompt="یک موضوع علمی را ساده و با مثال توضیح بده."><span class="suggestion-icon mint">⌁</span><span><b>یادگیری و تحقیق</b><small>موضوعات پیچیده را ساده بفهم</small></span><i>↙</i></button>
+          <button class="suggestion" data-prompt="در بررسی و توضیح کد برنامه‌نویسی کمکم کن."><span class="suggestion-icon amber">⌘</span><span><b>برنامه‌نویسی</b><small>کد را بررسی و خطاها را پیدا کن</small></span><i>↙</i></button>
+        </div>
+      </div>
+      <div class="messages" id="messages" hidden></div>
+      <div class="composer-wrap">
+        <div class="composer">
+          <button class="attach" title="پیوست (در نسخه بعدی)">＋</button>
+          <textarea id="prompt" rows="1" placeholder="از اطلس هر چیزی بپرس..."></textarea>
+          <button class="send" id="send" aria-label="ارسال">↑</button>
+        </div>
+        <div class="composer-foot"><span>✦ اطلس می‌تواند اشتباه کند؛ پاسخ‌های مهم را بررسی کن.</span><span>پیش‌نمایش رابط کاربری</span></div>
+      </div>
+    </section>
+    <div class="toast" id="toast" role="status"></div>
+  </main>
+</div>
+<script src="./app.js"></script>
+</body>
+</html>
