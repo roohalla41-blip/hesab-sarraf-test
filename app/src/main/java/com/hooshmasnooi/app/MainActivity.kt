@@ -139,29 +139,47 @@ class MainActivity : ComponentActivity() {
         Identity.getAuthorizationClient(this).authorize(request)
             .addOnSuccessListener { result ->
                 if (result.hasResolution() && result.pendingIntent != null) {
-                    gmailAuthorizationLauncher.launch(IntentSenderRequest.Builder(result.pendingIntent!!.intentSender).build())
+                    gmailStatus = "حساب انتخاب شد؛ در انتظار تأیید مجوز Gmail از Google..."
+                    gmailAuthorizationLauncher.launch(
+                        IntentSenderRequest.Builder(result.pendingIntent!!.intentSender).build()
+                    )
                 } else {
-                    finishGmailAuthorization(result)
-                    val action = pendingGmailAuthorizationAction
-                    pendingGmailAuthorizationAction = null
-                    action?.invoke()
+                    try {
+                        finishGmailAuthorization(result)
+                        runPendingGmailAuthorizationAction()
+                    } catch (error: Exception) {
+                        failGmailAuthorization(error)
+                    }
                 }
             }
             .addOnFailureListener { error ->
-                pendingGmailAuthorizationAction = null
-                gmailStatus = "اتصال Gmail ناموفق بود: ${error.localizedMessage ?: "خطای نامشخص"}"
-                pendingGmailChatResult?.invoke(gmailStatus)
-                pendingGmailChatResult = null
+                failGmailAuthorization(error)
             }
     }
 
     private fun finishGmailAuthorization(result: AuthorizationResult) {
         val token = result.accessToken
         if (token.isNullOrBlank()) {
-            gmailStatus = "مجوز Gmail دریافت نشد."
-            return
+            throw IllegalStateException(
+                "Google نتیجه داد، اما توکن دسترسی Gmail برنگرداند. تنظیم OAuth Android و مجوز gmail.readonly را بررسی کن."
+            )
         }
         gmailAccessToken = token
+        gmailStatus = "مجوز Gmail با موفقیت دریافت شد."
+    }
+
+    private fun runPendingGmailAuthorizationAction() {
+        val action = pendingGmailAuthorizationAction
+        pendingGmailAuthorizationAction = null
+        action?.invoke()
+    }
+
+    private fun failGmailAuthorization(error: Exception) {
+        pendingGmailAuthorizationAction = null
+        val detail = error.localizedMessage ?: error.message ?: error.javaClass.simpleName
+        gmailStatus = "اتصال Gmail ناموفق بود: $detail"
+        pendingGmailChatResult?.invoke(gmailStatus)
+        pendingGmailChatResult = null
     }
 
     fun loadRecentGmail() {
@@ -246,18 +264,15 @@ class MainActivity : ComponentActivity() {
         gmailAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             try {
                 if (result.resultCode != RESULT_OK) {
-                    throw IllegalStateException("درخواست مجوز Google لغو شد.")
+                    throw IllegalStateException("پنجره مجوز Google بسته شد یا تأیید نشد (resultCode=${result.resultCode}).")
                 }
-                val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(result.data)
+                val data = result.data
+                    ?: throw IllegalStateException("Google نتیجه‌ای به برنامه برنگرداند (Intent خالی بود).")
+                val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
                 finishGmailAuthorization(authorization)
-                val action = pendingGmailAuthorizationAction
-                pendingGmailAuthorizationAction = null
-                action?.invoke()
+                runPendingGmailAuthorizationAction()
             } catch (error: Exception) {
-                pendingGmailAuthorizationAction = null
-                gmailStatus = "مجوز Gmail تکمیل نشد: ${error.localizedMessage ?: "لغو یا خطای Google"}"
-                pendingGmailChatResult?.invoke(gmailStatus)
-                pendingGmailChatResult = null
+                failGmailAuthorization(error)
             }
         }
         setContent {
