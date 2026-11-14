@@ -51,29 +51,63 @@ function startNewChat() {
   setActivePanel("chat");
   sidebar.classList.remove("open");
 }
-function renderMessage(text) {
+function renderMessage(text, role = "user") {
   const bubble = document.createElement("div");
-  bubble.className = "message";
+  bubble.className = role === "assistant" ? "message assistant-message" : "message";
   bubble.textContent = text;
   messages.appendChild(bubble);
-  const notice = document.createElement("div");
-  notice.className = "notice";
-  notice.textContent = "پیام شما فقط در همین پیش‌نمایش نمایش داده شد. موتور هوش مصنوعی هنوز متصل نیست و هیچ پاسخ ساختگی تولید نشده است.";
-  messages.appendChild(notice);
   messages.scrollTop = messages.scrollHeight;
 }
-function sendMessage(value = promptInput.value) {
+async function sendMessage(value = promptInput.value) {
   const text = value.trim();
   if (!text) return;
   const id = currentMessages[0]?.conversationId || (Date.now() + Math.random()).toString(36);
-  currentMessages.push({ id: currentMessages.length + 1, conversationId: id, text, mode: currentMode });
+  const history = currentMessages.slice(-8).map(item => ({
+    role: item.role === "assistant" ? "assistant" : "user",
+    content: item.text
+  }));
+  currentMessages.push({ id: currentMessages.length + 1, conversationId: id, text, mode: currentMode, role: "user" });
   saveCurrentConversation();
   welcome.hidden = true;
   pageView.hidden = true;
   messages.hidden = false;
   composerWrap.hidden = false;
-  renderMessage(text);
+  renderMessage(text, "user");
   promptInput.value = "";
+  const sendButton = $("#send");
+  sendButton.disabled = true;
+  sendButton.textContent = "…";
+  const pending = document.createElement("div");
+  pending.className = "notice";
+  pending.textContent = "اطلس در حال پاسخ‌گویی است…";
+  messages.appendChild(pending);
+  messages.scrollTop = messages.scrollHeight;
+  try {
+    const response = await fetch("https://wwlyvojtsrklcpqsloqz.supabase.co/functions/v1/atlas-chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": "sb_publishable_TFLE7E_j9-1H4DWM-yQ8GQ_15kUInFo"
+      },
+      body: JSON.stringify({ message: text, history, mode: currentMode })
+    });
+    const data = await response.json().catch(() => ({}));
+    pending.remove();
+    if (!response.ok) throw new Error(data.error || "پاسخی از سرویس دریافت نشد.");
+    const answer = typeof data.reply === "string" ? data.reply.trim() : "";
+    if (!answer) throw new Error("پاسخ خالی از سرویس دریافت شد.");
+    currentMessages.push({ id: currentMessages.length + 1, conversationId: id, text: answer, mode: currentMode, role: "assistant" });
+    saveCurrentConversation();
+    renderMessage(answer, "assistant");
+  } catch (error) {
+    pending.className = "notice error-notice";
+    pending.textContent = error.message || "ارتباط برقرار نشد؛ دوباره تلاش کن.";
+    messages.appendChild(pending);
+  } finally {
+    sendButton.disabled = false;
+    sendButton.textContent = "↑";
+    promptInput.focus();
+  }
 }
 function setActivePanel(panel) {
   document.querySelectorAll(".nav-item").forEach(item => {
