@@ -1,8 +1,10 @@
 name: Android build
 
 on:
-  # Builds are intentionally manual. Do not run builds unless the user explicitly asks.
   workflow_dispatch:
+  push:
+    branches:
+      - atlas-android-preview-apk
 
 permissions:
   contents: read
@@ -25,7 +27,7 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Build debug APK
+      - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
 
       - name: Upload debug APK
