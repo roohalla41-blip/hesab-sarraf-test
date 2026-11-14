@@ -95,6 +95,13 @@ import androidx.compose.ui.unit.sp
 import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.data.local.ChatStorage
 
+private fun isGmailCheckRequest(text: String): Boolean {
+    val normalized = text.lowercase()
+    val mentionsGmail = listOf("gmail", "جیمیل", "ایمیل", "صندوق ورودی").any { normalized.contains(it) }
+    val asksToCheck = listOf("بررسی", "چک", "بخوان", "بخون", "خلاصه", "جدید", "دریافت", "ببین").any { normalized.contains(it) }
+    return mentionsGmail && asksToCheck
+}
+
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
 
 private val atlasPages = listOf(
@@ -170,6 +177,50 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun readGmailForChat(onResult: (String) -> Unit) {
+        val token = gmailAccessToken
+        if (token.isNullOrBlank()) {
+            onResult("برای بررسی ایمیل‌ها، ابتدا از منوی «اتصال برنامه‌ها» حساب Gmail را متصل کن.")
+            return
+        }
+        gmailLoading = true
+        gmailStatus = "در حال بررسی Gmail از داخل گفت‌وگو..."
+        gmailScope.launch {
+            try {
+                val inbox = GmailApi.latestInbox(token)
+                gmailMessages = inbox
+                gmailStatus = if (inbox.isEmpty()) {
+                    "اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد."
+                } else {
+                    "اتصال موفق است؛ ${inbox.size} ایمیل دریافت شد."
+                }
+                val answer = if (inbox.isEmpty()) {
+                    "صندوق ورودی Gmail بررسی شد؛ ایمیل تازه‌ای برای نمایش پیدا نکردم."
+                } else {
+                    buildString {
+                        append("صندوق ورودی Gmail بررسی شد. ")
+                        append(inbox.size)
+                        append(" ایمیل اخیر دریافت کردم:\n\n")
+                        inbox.forEachIndexed { index, item ->
+                            append(index + 1)
+                            append(") ")
+                            append(item)
+                            append("\n\n")
+                        }
+                        append("این بررسی فقط خواندنی بود؛ هیچ ایمیلی ارسال یا حذف نشد.")
+                    }
+                }
+                onResult(answer)
+            } catch (error: Exception) {
+                val detail = error.localizedMessage ?: "خطای شبکه یا مجوز Google"
+                gmailStatus = "بررسی Gmail ناموفق بود: $detail"
+                onResult("نتوانستم ایمیل‌ها را بخوانم: $detail\nاگر مجوز منقضی شده یا لغو شده است، از بخش اتصال برنامه‌ها دوباره Gmail را متصل کن.")
+            } finally {
+                gmailLoading = false
+            }
+        }
+    }
+
     fun disconnectGmail() {
         gmailAccessToken = null
         gmailMessages = emptyList()
@@ -209,7 +260,8 @@ class MainActivity : ComponentActivity() {
                     gmailLoading = gmailLoading,
                     onConnectGmail = { connectGmail() },
                     onRefreshGmail = { loadRecentGmail() },
-                    onDisconnectGmail = { disconnectGmail() }
+                    onDisconnectGmail = { disconnectGmail() },
+                    onReadGmailForChat = { onResult -> readGmailForChat(onResult) }
                 )
                 }
             }
@@ -225,7 +277,8 @@ private fun AtlasApp(
     gmailLoading: Boolean,
     onConnectGmail: () -> Unit,
     onRefreshGmail: () -> Unit,
-    onDisconnectGmail: () -> Unit
+    onDisconnectGmail: () -> Unit,
+    onReadGmailForChat: ((String) -> Unit) -> Unit
 ) {
     val appContext = LocalContext.current.applicationContext
     var currentPage by remember { mutableStateOf("chat") }
@@ -233,8 +286,8 @@ private fun AtlasApp(
     var showStatus by remember { mutableStateOf(false) }
     var darkPreview by remember { mutableStateOf(false) }
     var languagePreview by remember { mutableStateOf("فارسی") }
-    var nextId by remember { mutableStateOf(1L) }
     val messages = remember { mutableStateListOf<ChatMessage>().apply { addAll(ChatStorage.load(appContext)) } }
+    var nextId by remember { mutableStateOf((messages.maxOfOrNull { it.id } ?: 0L) + 1L) }
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -243,7 +296,22 @@ private fun AtlasApp(
         val cleanText = rawText.trim()
         if (cleanText.isNotEmpty()) {
             messages.add(ChatMessage(nextId++, cleanText, true))
+            ChatStorage.save(appContext, messages)
             input = ""
+            if (isGmailCheckRequest(cleanText)) {
+                val pendingId = nextId++
+                messages.add(ChatMessage(pendingId, "در حال بررسی صندوق ورودی Gmail...", false))
+                ChatStorage.save(appContext, messages)
+                onReadGmailForChat { answer ->
+                    val pendingIndex = messages.indexOfFirst { it.id == pendingId }
+                    if (pendingIndex >= 0) {
+                        messages[pendingIndex] = ChatMessage(pendingId, answer, false)
+                    } else {
+                        messages.add(ChatMessage(nextId++, answer, false))
+                    }
+                    ChatStorage.save(appContext, messages)
+                }
+            }
         }
     }
 
@@ -303,6 +371,7 @@ private fun AtlasApp(
                     actions = {
                         IconButton(onClick = {
                             messages.clear()
+                            ChatStorage.clear(appContext)
                             input = ""
                             currentPage = "chat"
                         }) {
@@ -351,7 +420,7 @@ private fun AtlasApp(
                             }
                         }
                         Text(
-                            "پیام‌ها در فضای اختصاصی برنامه روی همین دستگاه ذخیره می‌شوند؛ پاسخ هوش مصنوعی هنوز فعال نیست.",
+                            "برای بررسی ایمیل، Gmail را از بخش «اتصال برنامه‌ها» وصل کن؛ سپس در همین گفت‌وگو بنویس «ایمیل‌های جدیدم را بررسی کن».",
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -455,14 +524,6 @@ private fun ChatPage(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(messages, key = { it.id }) { message -> MessageBubble(message) }
-            item {
-                Text(
-                    "پیام شما نمایش داده شد؛ چون موتور هوش مصنوعی متصل نیست، پاسخی ساخته نشده است.",
-                    modifier = Modifier.fillMaxWidth().padding(10.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
         }
     }
 }
