@@ -112,6 +112,17 @@ function renderPanel(panel) {
         ${featureCard("♫","ورودی و خروجی صوت","گفتار به متن و خواندن پاسخ","بعداً")}
         ${featureCard("⇧","اشتراک‌گذاری خروجی","کپی، خروجی گرفتن و اشتراک مکالمه","بعداً")}
       </div><p class="disclaimer">ابزارها تا زمان پیاده‌سازی، اتصال امن و آزمایش واقعی غیرفعال می‌مانند.</p>`,
+    integrations: `
+      <div class="page-heading"><div><div class="eyebrow">ATLAS CONNECT</div><h2>اتصال برنامه‌ها</h2><p>سرویس‌های خارجی را به اطلس وصل کن و دسترسی‌ها را خودت کنترل کن.</p></div></div>
+      <div class="security-banner"><span>⇄</span><div><b>مرکز اتصال ATLAS CONNECT</b><p>این نسخه فهرست سرویس‌ها و مسیر آماده‌سازی را به‌صورت تعاملی نشان می‌دهد؛ هنوز هیچ حسابی متصل نشده است.</p></div></div>
+      <div class="integration-grid">
+        <article class="integration-card"><div class="integration-mark github-mark">GH</div><div class="integration-copy"><b>GitHub</b><p>بررسی مخزن، خواندن فایل‌ها و کمک به توسعه کد</p><small>نیازمند ثبت OAuth App</small></div><button class="secondary-btn" data-integration="GitHub">جزئیات اتصال</button></article>
+        <article class="integration-card"><div class="integration-mark gmail-mark">G</div><div class="integration-copy"><b>Gmail</b><p>جست‌وجو و خلاصه‌سازی ایمیل‌ها؛ ارسال فقط با تأیید</p><small>نیازمند OAuth و مجوزهای Gmail</small></div><button class="secondary-btn" data-integration="Gmail">جزئیات اتصال</button></article>
+        <article class="integration-card"><div class="integration-mark drive-mark">▣</div><div class="integration-copy"><b>Google Drive</b><p>یافتن و تحلیل فایل‌های انتخاب‌شده</p><small>نیازمند OAuth و Drive API</small></div><button class="secondary-btn" data-integration="Google Drive">جزئیات اتصال</button></article>
+        <article class="integration-card"><div class="integration-mark supabase-mark">S</div><div class="integration-copy"><b>Supabase</b><p>مدیریت پروژه و عملیات مجاز از طریق بک‌اند امن</p><small>توکن فقط در سمت سرور</small></div><button class="secondary-btn" data-integration="Supabase">جزئیات اتصال</button></article>
+        <article class="integration-card"><div class="integration-mark calendar-mark">▦</div><div class="integration-copy"><b>Google Calendar</b><p>خواندن برنامه‌ها و مدیریت رویدادها با اجازه</p><small>نیازمند OAuth و Calendar API</small></div><button class="secondary-btn" data-integration="Google Calendar">جزئیات اتصال</button></article>
+      </div>
+      <p class="disclaimer">وضعیت همه سرویس‌ها: متصل نیست. این پیش‌نمایش توکن یا رمز عبور دریافت نمی‌کند و هنوز درخواست اتصال واقعی ارسال نمی‌کند.</p>`,
     profile: `
       <div class="page-heading"><div><div class="eyebrow">ACCOUNT</div><h2>حساب کاربری</h2><p>نمای کلی حساب در نسخه ساختاری.</p></div></div>
       <div class="profile-card"><div class="profile-avatar">A</div><div><h3>کاربر مهمان</h3><p class="muted">بدون ورود • حساب آنلاین ایجاد نشده</p><span class="state-pill">حالت محلی نمایشی</span></div></div>
@@ -159,6 +170,10 @@ function renderPanel(panel) {
   welcome.hidden = true;
   messages.hidden = true;
   composerWrap.hidden = true;
+  pageView.querySelectorAll("[data-integration]").forEach(button => button.addEventListener("click", () => {
+    const service = button.dataset.integration;
+    notify("برای اتصال واقعی " + service + " ابتدا OAuth و بک‌اند امن باید پیکربندی شود؛ هنوز متصل نشده است.");
+  }));
   pageView.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => {
     if (button.dataset.action === "new-chat") startNewChat();
     if (button.dataset.action === "theme") toggleTheme();
