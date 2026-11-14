@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# Keep the debug keystore cache and OAuth SHA-1 stable by serialising builds.
+concurrency:
+  group: atlas-android-debug-build
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
