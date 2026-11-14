@@ -9,6 +9,7 @@ This is a repository-only implementation draft. It does not deploy or configure 
 - JSON-backed local conversation repository in Android private internal storage.
 - Chat screen creates conversations, persists user messages, restores the latest conversation on launch, and opens saved conversations from History.
 - History screen supports per-conversation deletion and clear-all deletion with confirmation dialogs.
+- Privacy and Security screen reports the current local-storage state, shows the local conversation count, links to History, and offers confirmed clear-all deletion.
 - Clear-all attempts to remove the damaged-history recovery copy and reports failure if that copy cannot be deleted.
 - Local history writes flush a same-directory temporary file and use atomic replacement when supported, with a replacement fallback that avoids directly truncating the previous file.
 - Appearance preview and language selection preferences are persisted locally on the device.
@@ -35,6 +36,7 @@ This is a repository-only implementation draft. It does not deploy or configure 
 - No account authentication flow or cloud conversation synchronization.
 - No file, image, audio, web, or coding tool execution.
 - No production monitoring or automated integration tests.
+- The repository has no configured test dependencies for the local JSON repository; persistence behavior remains untested by automated tests.
 
 ## Security and rollout gates
 1. Keep the legacy `ai-assistant` endpoint unchanged until a separate ATLAS endpoint and migration plan are approved.
@@ -45,4 +47,4 @@ This is a repository-only implementation draft. It does not deploy or configure 
 6. Add local-storage tests, adapter tests, and integration tests, then explicitly authorize deployment. This change does not deploy anything.
 
 ## Current status
-The Android gateway remains disabled and disconnected from the legacy live endpoint. Local chat history is connected to the UI on a work branch, including per-conversation deletion, clear-all history, safer file replacement, visible persistence errors, and locally persisted appearance/language preferences. The production AI engine is not complete. Review and test all source before deployment.
+The Android gateway remains disabled and disconnected from the legacy live endpoint. Local chat history is connected to the UI on a work branch, including per-conversation deletion, clear-all history, an actionable privacy page, safer file replacement, visible persistence errors, and locally persisted appearance/language preferences. The production AI engine is not complete. Review and test all source before deployment.
