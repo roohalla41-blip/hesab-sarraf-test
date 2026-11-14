@@ -30,3 +30,21 @@ GitHub is the recommended first integration because the app can demonstrate repo
 - Revocation/disconnect invalidates stored credentials.
 - Read-only scopes cannot perform write actions.
 - Side effects require confirmation and are audited.
+
+## Gmail Android read-only pilot (implemented in source)
+- Android now uses Google Identity Services AuthorizationClient and requests only `https://www.googleapis.com/auth/gmail.readonly`.
+- After user consent, the app calls Gmail API to list up to 8 inbox messages and fetch their From, Subject, Date metadata and snippet.
+- The short-lived access token stays in Activity memory only; it is not written to SharedPreferences, Supabase, or GitHub.
+- The pilot currently has no server-side refresh-token flow. Reauthorization may be required in a later session; do not claim persistent/offline access.
+- Sending, deleting, modifying, or drafting email is not enabled.
+
+### Google Cloud setup required before the first device test
+1. Create/select a Google Cloud project and enable Gmail API.
+2. Configure the OAuth consent screen. While testing, add the owner's Google account as a test user if the app is in Testing mode.
+3. Create an OAuth client of type Android for package `com.hooshmasnooi.app` using the SHA-1 certificate fingerprint of the APK being tested (debug and release fingerprints differ).
+4. Install a build signed with that matching certificate, tap **اتصال حساب Gmail با Google**, and approve the read-only Gmail permission.
+5. Confirm the app reports the number of inbox messages fetched. Gmail `gmail.readonly` is a restricted scope and Google verification/security requirements apply before broad public release.
+
+Official references:
+- https://developer.android.com/identity/authorization
+- https://developers.google.com/workspace/gmail/api/auth/scopes
