@@ -92,6 +92,7 @@ private val atlasPages = listOf(
     AtlasPage("history", "تاریخچه", "◷"),
     AtlasPage("explore", "کاوش دستیارها", "◇"),
     AtlasPage("tools", "ابزارها", "⌘"),
+    AtlasPage("integrations", "اتصال برنامه‌ها", "⇄"),
     AtlasPage("profile", "حساب کاربری", "◎"),
     AtlasPage("plans", "طرح‌های اشتراک", "♧"),
     AtlasPage("settings", "تنظیمات", "⚙"),
@@ -291,6 +292,7 @@ private fun AtlasApp() {
                     ),
                     Modifier.fillMaxSize().padding(padding)
                 )
+                "integrations" -> IntegrationsPage(Modifier.fillMaxSize().padding(padding))
                 "profile" -> ProfilePage(Modifier.fillMaxSize().padding(padding))
                 "plans" -> PlansPage(Modifier.fillMaxSize().padding(padding))
                 "settings" -> SettingsPage(
@@ -518,6 +520,59 @@ private fun SuggestionCard(icon: String, title: String, description: String, onC
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+    }
+}
+
+
+@Composable
+private fun IntegrationsPage(modifier: Modifier = Modifier) {
+    var selectedService by remember { mutableStateOf<String?>(null) }
+    val services = listOf(
+        Triple("GitHub", "بررسی مخزن، خواندن فایل‌ها و کمک به توسعه کد", "OAuth لازم است"),
+        Triple("Gmail", "جست‌وجو و خلاصه‌سازی ایمیل‌ها؛ ارسال فقط با تأیید", "OAuth لازم است"),
+        Triple("Google Drive", "یافتن و تحلیل فایل‌های انتخاب‌شده", "OAuth لازم است"),
+        Triple("Supabase", "مدیریت پروژه و عملیات مجاز از طریق بک‌اند امن", "توکن سمت سرور لازم است"),
+        Triple("Google Calendar", "خواندن برنامه‌ها و مدیریت رویدادها با اجازه", "OAuth لازم است")
+    )
+    Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
+        PageTitle("اتصال برنامه‌ها", "سرویس‌های خارجی را به اطلس وصل کن و دسترسی‌ها را خودت کنترل کن.")
+        InfoCard("مرکز اتصال ATLAS CONNECT", "در این نسخه، فهرست و مسیر آماده‌سازی اتصال‌ها فعال است؛ هنوز هیچ حسابی متصل نشده است.")
+        Spacer(Modifier.height(12.dp))
+        services.forEach { service ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+            ) {
+                Column(Modifier.padding(15.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(service.first, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("متصل نیست", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(Modifier.height(5.dp))
+                    Text(service.second, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(9.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(service.third, color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { selectedService = service.first }) { Text("جزئیات اتصال") }
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+        InfoCard("امنیت", "رمز عبور و توکن سرویس‌ها نباید داخل گوشی یا GitHub ذخیره شوند. اتصال واقعی باید از طریق OAuth و بک‌اند امن انجام شود؛ دسترسی‌ها باید قابل لغو باشند.")
+    }
+    selectedService?.let { service ->
+        AlertDialog(
+            onDismissRequest = { selectedService = null },
+            title = { Text("آماده‌سازی اتصال $service") },
+            text = {
+                Text("برای اتصال واقعی $service باید برنامه OAuth ثبت شود، شناسه عمومی و تنظیمات بازگشت تعریف شوند و تبادل توکن در سمت سرور انجام شود. در این نسخه هنوز اتصال برقرار نمی‌شود و هیچ اطلاعات ورود دریافت نمی‌کنیم.")
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedService = null }) { Text("متوجه شدم") }
+            }
+        )
     }
 }
 
