@@ -16,11 +16,11 @@
 - Users should not put passwords, API keys, or other secrets into chat messages.
 - Retention is bounded to the newest 40 conversations and 300 messages per conversation.
 - Users can delete one conversation from History after confirmation.
-- Users can clear all conversations from History after a separate confirmation.
+- Users can clear all conversations from History after a separate confirmation. This operation also attempts to remove the damaged-history recovery copy.
 - There is no in-app export control.
 - Clearing app data or uninstalling the app also removes the local history file.
-- A corrupted history file is copied to a `.corrupt` backup before an empty history is returned. This recovery copy remains in private app storage and is not currently exposed in the UI; it must be considered in any future privacy/deletion audit.
-- The file write uses a temporary file and rename attempt, but its fallback writes directly to the target file. A fully crash-safe atomic replacement strategy remains a hardening item.
+- If the main history JSON is malformed, the repository preserves one `.corrupt` recovery copy in private app storage before returning an empty history. Individual conversation deletion does not currently inspect or selectively edit this recovery copy. Clear-all removes it; if removal fails, the operation reports an error.
+- Writes now flush a same-directory temporary file and attempt an atomic replacement, falling back to a same-directory replacement operation rather than truncating the existing file directly. Filesystem guarantees still vary, and this behavior has not yet been device-tested.
 
 ## Local encryption decision
 - Do not silently encrypt or rename the existing history file in-place.
