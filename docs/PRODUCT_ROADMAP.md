@@ -16,6 +16,8 @@
 - [x] Persistent light/dark appearance preference
 - [x] Multiple local conversations: create, open, continue, rename, search, and delete with confirmation
 - [x] Migration from the previous single-conversation local store
+- [x] Automatic FIFO retention of the newest 300 messages per conversation in local history
+- [ ] Execute and verify automated retention and migration tests
 - [x] Copy individual chat messages
 - [x] Automatic Persian/English selection from device locale and RTL/LTR layout direction
 - [x] Explicit user-facing state when the general AI engine is not connected
