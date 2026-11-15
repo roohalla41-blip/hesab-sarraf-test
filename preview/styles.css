@@ -36,3 +36,149 @@ body.light .integration-card{background:#fff;color:#243750}
 .message.assistant{margin:0 auto 12px 0;background:#14263d;border-color:#3d5472;color:#eaf1fc}
 .message.error{border-color:#d8a85a66;color:#f0c98a;background:#4b351a44}
 #send:disabled{opacity:.55;cursor:wait}
+
+
+/* ATLAS AI — professional responsive layout refinement */
+:root{
+  --bg:#0a1220;--panel:#101c2e;--panel2:#17263c;
+  --line:rgba(166,190,222,.14);--text:#edf3fc;--muted:#9aabc0;
+  --accent:#8982ff;--teal:#56d7c7;
+}
+html{min-width:320px;min-height:100%;scroll-behavior:smooth}
+body{min-width:320px;min-height:100vh;overflow-x:hidden}
+button,textarea{font:inherit}
+button{ -webkit-tap-highlight-color:transparent }
+.app-shell{min-height:100dvh}
+.sidebar{width:258px;padding:24px 16px 16px}
+.brand{padding-bottom:26px}
+.new-chat{height:46px;font-size:13px;margin-bottom:22px}
+.nav-label{font-size:11px;margin-top:10px;padding-bottom:8px}
+.nav-item{min-height:42px;padding:10px 12px;font-size:13px;border-radius:10px}
+.main{min-height:100dvh}
+.topbar{height:68px;flex:0 0 68px;padding-inline:clamp(18px,3vw,42px)}
+.top-title{font-size:14px}
+.top-title small{font-size:12px}
+.content{width:min(100%,1040px);padding:clamp(22px,3vw,38px) clamp(18px,3vw,40px) 18px;min-height:calc(100dvh - 68px)}
+.welcome{margin:auto 0;padding-block:10px}
+.hero-symbol{width:70px;height:70px;margin-bottom:18px;border-radius:22px}
+.hero-symbol span{font-size:38px}
+.eyebrow{font-size:12px}
+h1{font-size:clamp(30px,3.4vw,42px);line-height:1.35;margin:8px 0 12px}
+.lead{font-size:14px;line-height:2;max-width:650px;margin-bottom:24px}
+.mode-row{gap:9px;margin-bottom:24px}
+.mode-chip{font-size:12px;padding:9px 15px;min-height:38px}
+.command-center{max-width:820px;margin:0 auto 22px}
+.command-heading{font-size:13px;margin-bottom:12px}
+.command-heading span{font-size:11px}
+.command-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.command-tile{min-height:112px;padding:13px 14px;border-radius:15px;gap:6px}
+.command-icon{width:36px;height:36px;font-size:19px}
+.command-tile b{font-size:12px}
+.command-tile small{font-size:10px;line-height:1.7}
+.command-tile i{font-size:9px}
+.suggestions{max-width:820px;gap:11px}
+.suggestion{min-height:68px;padding:13px 15px;border-radius:14px;gap:13px}
+.suggestion-icon{width:40px;height:40px}
+.suggestion b{font-size:13px}
+.suggestion small{font-size:11px;line-height:1.6}
+.composer-wrap{margin-top:22px;position:sticky;bottom:0;padding-top:8px;background:linear-gradient(180deg,transparent 0%,var(--bg) 20%)}
+.composer{min-height:62px;padding:9px 11px;border-radius:17px}
+.composer textarea{font-size:14px;line-height:1.8;min-height:40px}
+.attach,.send{width:40px;height:40px;flex:0 0 40px}
+.composer-foot{font-size:11px;padding:9px 5px}
+.messages{width:100%;max-width:900px;margin-inline:auto;padding:22px 4px 28px}
+.message{max-width:min(78%,720px);font-size:14px;line-height:2;padding:13px 17px;border-radius:16px}
+.message.assistant{max-width:min(88%,800px)}
+.page-view{max-width:920px;padding:12px 0 34px}
+.page-heading{margin:8px 0 26px}
+.page-heading h2{font-size:clamp(26px,3vw,34px)}
+.page-heading p,.muted{font-size:13px;line-height:1.8}
+.panel-card,.settings-list,.support-card{padding:21px;border-radius:18px}
+.feature-grid,.integration-grid{gap:14px}
+.feature-card,.integration-card{padding:17px;min-height:82px}
+.feature-copy b,.integration-copy b{font-size:13px}
+.feature-copy p,.integration-copy p{font-size:11px;line-height:1.8}
+.state-pill{font-size:10px;padding:5px 9px}
+.plan-card{padding:20px}
+.plan-card p,.plan-card li{font-size:12px}
+.setting-row{padding:17px 0}
+.setting-row b{font-size:13px}
+.setting-row small{font-size:11px;line-height:1.7}
+.faq-list details{padding:18px}
+.faq-list summary{font-size:13px}
+.faq-list p,.support-card p{font-size:12px;line-height:2}
+.toast{font-size:12px;max-width:calc(100vw - 32px);text-align:center}
+
+/* Tablet */
+@media(max-width:1050px){
+  .sidebar{width:238px}
+  .content{padding-inline:26px}
+  .command-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .command-tile{padding:11px}
+}
+/* Phone and compact tablet */
+@media(max-width:760px){
+  .sidebar{width:min(300px,86vw);padding:22px 16px 16px}
+  .topbar{height:60px;flex-basis:60px;padding-inline:14px}
+  .top-title{gap:8px;font-size:13px}
+  .top-title small{font-size:10px;padding-right:8px}
+  .content{width:100%;padding:18px 14px 12px;min-height:calc(100dvh - 60px)}
+  .welcome{margin:0;padding:8px 0 4px}
+  .hero-symbol{width:60px;height:60px;border-radius:19px;margin-bottom:15px}
+  .hero-symbol span{font-size:33px}
+  h1{font-size:29px;margin:7px 0 8px}
+  .lead{font-size:12px;line-height:1.9;margin-bottom:18px;max-width:520px}
+  .mode-row{gap:7px;margin-bottom:18px}
+  .mode-chip{font-size:11px;padding:7px 11px;min-height:34px}
+  .command-center{margin-bottom:17px}
+  .command-heading{font-size:12px;margin-bottom:9px}
+  .command-heading span{font-size:10px}
+  .command-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .command-tile{min-height:101px;padding:10px 11px;border-radius:13px;gap:4px}
+  .command-icon{width:32px;height:32px;border-radius:10px;font-size:17px}
+  .command-tile b{font-size:11px}
+  .command-tile small{font-size:9px;line-height:1.5}
+  .command-tile i{font-size:8px}
+  .suggestions{grid-template-columns:1fr;gap:8px}
+  .suggestion{min-height:61px;padding:10px 12px;gap:11px}
+  .suggestion-icon{width:36px;height:36px;border-radius:11px;font-size:17px}
+  .suggestion b{font-size:12px}
+  .suggestion small{font-size:10px}
+  .composer-wrap{margin-top:auto;padding-top:12px}
+  .composer{min-height:56px;padding:7px 8px;gap:7px}
+  .composer textarea{font-size:13px;min-height:38px;padding:7px 2px}
+  .attach,.send{width:36px;height:36px;flex-basis:36px;border-radius:11px}
+  .composer-foot{font-size:9px;padding:8px 3px}
+  .messages{padding:15px 0 22px}
+  .message,.message.assistant{max-width:94%;font-size:13px;padding:11px 13px}
+  .page-view{padding:4px 0 24px}
+  .page-heading{gap:12px;margin:5px 0 19px}
+  .page-heading h2{font-size:25px}
+  .page-heading p,.muted{font-size:11px}
+  .panel-card,.settings-list,.support-card{padding:14px}
+  .feature-grid,.integration-grid{grid-template-columns:1fr;gap:9px}
+  .feature-card,.integration-card{padding:13px;min-height:70px}
+  .feature-copy b,.integration-copy b{font-size:12px}
+  .feature-copy p,.integration-copy p{font-size:10px}
+  .state-pill{font-size:9px}
+  .profile-card{gap:13px;padding:15px}
+  .profile-avatar{width:52px;height:52px}
+}
+/* Narrow phones */
+@media(max-width:390px){
+  .content{padding-inline:11px}
+  .topbar{padding-inline:11px}
+  .top-title small{display:none}
+  .hero-symbol{width:54px;height:54px}
+  h1{font-size:26px}
+  .lead{font-size:11px}
+  .command-tile{min-height:96px;padding:9px}
+  .command-tile small{font-size:8px}
+  .suggestion{padding-inline:10px}
+  .composer-foot{font-size:8px}
+}
+/* Large desktop breathing room */
+@media(min-width:1400px){
+  .content{width:min(100%,1120px)}
+  .command-center,.suggestions{max-width:880px}
+}
