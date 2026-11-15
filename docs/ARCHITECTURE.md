@@ -30,7 +30,7 @@ ATLAS AI is a multilingual, globally shareable AI assistant. The initial experie
 - Requests have bounded input sizes and explicit error states.
 
 ## Data strategy
-- Local conversation storage is separate from the AI provider. The current SharedPreferences store keeps up to 100 conversations and the newest 300 messages per conversation; older messages are automatically trimmed on save and when loading legacy/oversized history. A single previous JSON snapshot is retained and used to recover if the current conversation snapshot becomes unreadable.
+- Local conversation storage is separate from the AI provider. The current SharedPreferences store keeps the 100 most recently updated conversations and the newest 300 messages per conversation; conversation ordering is normalized before the retention cap is applied, and older messages are trimmed on save and when loading legacy/oversized history. A single previous JSON snapshot is retained and used to recover if the current conversation snapshot becomes unreadable.
 - Cloud sync and account storage are postponed until the selected backend is authorized.
 - No production database, authentication, or server function is changed by this scaffold.
 
