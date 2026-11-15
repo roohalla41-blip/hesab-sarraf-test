@@ -16,18 +16,17 @@ import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
-/**
- * JSON-backed conversation history stored in the app's private internal files directory.
- *
- * This is device-local storage only: it does not sync to Supabase or any cloud service.
- * Android app sandboxing protects the file from ordinary other apps, but this first
- * version does not provide application-level encryption. Do not store passwords,
- * API keys, or other secrets in conversation messages.
- */
-class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
+/** AES-GCM encrypted, device-local conversation history with verified legacy migration. */
+class JsonChatHistoryRepository internal constructor(
+    context: Context,
+    private val cipher: HistoryCipher = AndroidKeystoreHistoryCipher()
+) : ChatHistoryRepository {
     private val directory = context.applicationContext.filesDir
-    private val file = File(directory, HISTORY_FILE)
-    private val corruptBackup = File(directory, CORRUPT_BACKUP_FILE)
+    private val encryptedFile = File(directory, ENCRYPTED_HISTORY_FILE)
+    private val legacyFile = File(directory, LEGACY_HISTORY_FILE)
+    private val legacyCorruptBackup = File(directory, LEGACY_CORRUPT_FILE)
+    private val encryptedCorruptBackup = File(directory, ENCRYPTED_CORRUPT_FILE)
+    private val encryptedLegacyCorruptBackup = File(directory, ENCRYPTED_LEGACY_CORRUPT_FILE)
     private val mutex = Mutex()
 
     override suspend fun getConversations(): List<Conversation> = withContext(Dispatchers.IO) {
@@ -40,73 +39,64 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
     override suspend fun getMessages(conversationId: String): List<ChatMessage> =
         withContext(Dispatchers.IO) {
             mutex.withLock {
-                findConversation(readRoot(), conversationId)
-                    ?.optJSONArray(KEY_MESSAGES)
-                    .toMessageList()
+                findConversation(readRoot(), conversationId)?.optJSONArray(KEY_MESSAGES).toMessageList()
             }
         }
 
-    override suspend fun saveConversation(conversation: Conversation) =
-        withContext(Dispatchers.IO) {
-            mutex.withLock {
-                val root = readRoot()
-                val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
-                val existing = findIndex(items, conversation.id)
-                val encoded = conversation.toJson()
-                if (existing >= 0) {
-                    val old = items.getJSONObject(existing)
-                    val retainedMessages = trimMessages(old.optJSONArray(KEY_MESSAGES) ?: JSONArray())
-                    encoded.put(KEY_MESSAGES, retainedMessages)
-                    encoded.put("messageCount", retainedMessages.length())
-                    encoded.put(
-                        "updatedAtEpochMillis",
-                        maxOf(old.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis)
-                    )
-                    items.put(existing, encoded)
-                } else {
-                    encoded.put(KEY_MESSAGES, JSONArray())
-                    encoded.put("messageCount", 0)
-                    items.put(encoded)
-                }
-                root.put(KEY_CONVERSATIONS, trimConversations(items))
-                writeRoot(root)
-            }
-        }
-
-    override suspend fun saveConversationAndMessage(
-        conversation: Conversation,
-        message: ChatMessage
-    ) = withContext(Dispatchers.IO) {
+    override suspend fun saveConversation(conversation: Conversation) = withContext(Dispatchers.IO) {
         mutex.withLock {
             val root = readRoot()
             val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
-            val index = findIndex(items, conversation.id)
-            val stored = if (index >= 0) {
-                items.getJSONObject(index).also { existing ->
-                    existing.put("title", conversation.title.take(MAX_TITLE_CHARS))
-                    existing.put("createdAtEpochMillis", conversation.createdAtEpochMillis)
-                    existing.put("isPinned", conversation.isPinned)
-                }
+            val existing = findIndex(items, conversation.id)
+            val encoded = conversation.toJson()
+            if (existing >= 0) {
+                val old = items.getJSONObject(existing)
+                val retained = trimMessages(old.optJSONArray(KEY_MESSAGES) ?: JSONArray())
+                encoded.put(KEY_MESSAGES, retained)
+                encoded.put("messageCount", retained.length())
+                encoded.put("updatedAtEpochMillis", maxOf(old.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis))
+                items.put(existing, encoded)
             } else {
-                conversation.toJson().put(KEY_MESSAGES, JSONArray())
+                encoded.put(KEY_MESSAGES, JSONArray())
+                encoded.put("messageCount", 0)
+                items.put(encoded)
             }
-            val messages = stored.optJSONArray(KEY_MESSAGES) ?: JSONArray()
-            val duplicate = (0 until messages.length()).any {
-                messages.optJSONObject(it)?.optLong("id") == message.id
-            }
-            if (!duplicate) messages.put(message.toJson())
-            val retainedMessages = trimMessages(messages)
-            stored.put(KEY_MESSAGES, retainedMessages)
-            stored.put("messageCount", retainedMessages.length())
-            stored.put(
-                "updatedAtEpochMillis",
-                maxOf(stored.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis, System.currentTimeMillis())
-            )
-            if (index >= 0) items.put(index, stored) else items.put(stored)
             root.put(KEY_CONVERSATIONS, trimConversations(items))
             writeRoot(root)
         }
     }
+
+    override suspend fun saveConversationAndMessage(conversation: Conversation, message: ChatMessage) =
+        withContext(Dispatchers.IO) {
+            mutex.withLock {
+                val root = readRoot()
+                val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
+                val index = findIndex(items, conversation.id)
+                val stored = if (index >= 0) {
+                    items.getJSONObject(index).also {
+                        it.put("title", conversation.title.take(MAX_TITLE_CHARS))
+                        it.put("createdAtEpochMillis", conversation.createdAtEpochMillis)
+                        it.put("isPinned", conversation.isPinned)
+                    }
+                } else conversation.toJson().put(KEY_MESSAGES, JSONArray())
+
+                val messages = stored.optJSONArray(KEY_MESSAGES) ?: JSONArray()
+                val duplicate = (0 until messages.length()).any {
+                    messages.optJSONObject(it)?.optLong("id") == message.id
+                }
+                if (!duplicate) messages.put(message.toJson())
+                val retained = trimMessages(messages)
+                stored.put(KEY_MESSAGES, retained)
+                stored.put("messageCount", retained.length())
+                stored.put(
+                    "updatedAtEpochMillis",
+                    maxOf(stored.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis, System.currentTimeMillis())
+                )
+                if (index >= 0) items.put(index, stored) else items.put(stored)
+                root.put(KEY_CONVERSATIONS, trimConversations(items))
+                writeRoot(root)
+            }
+        }
 
     override suspend fun saveMessage(conversationId: String, message: ChatMessage) =
         withContext(Dispatchers.IO) {
@@ -115,112 +105,150 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                 val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
                 val index = findIndex(items, conversationId)
                 if (index < 0) return@withLock
-
                 val conversation = items.getJSONObject(index)
                 val messages = conversation.optJSONArray(KEY_MESSAGES) ?: JSONArray()
-                if ((0 until messages.length()).any {
-                        messages.optJSONObject(it)?.optLong("id") == message.id
-                    }) return@withLock
-
+                if ((0 until messages.length()).any { messages.optJSONObject(it)?.optLong("id") == message.id }) {
+                    return@withLock
+                }
                 messages.put(message.toJson())
-                val retainedMessages = trimMessages(messages)
-                conversation.put(KEY_MESSAGES, retainedMessages)
-                conversation.put("messageCount", retainedMessages.length())
-                conversation.put(
-                    "updatedAtEpochMillis",
-                    maxOf(conversation.optLong("updatedAtEpochMillis"), System.currentTimeMillis())
-                )
+                val retained = trimMessages(messages)
+                conversation.put(KEY_MESSAGES, retained)
+                conversation.put("messageCount", retained.length())
+                conversation.put("updatedAtEpochMillis", maxOf(conversation.optLong("updatedAtEpochMillis"), System.currentTimeMillis()))
                 items.put(index, conversation)
                 root.put(KEY_CONVERSATIONS, items)
                 writeRoot(root)
             }
         }
 
-    override suspend fun deleteConversation(conversationId: String) =
-        withContext(Dispatchers.IO) {
-            mutex.withLock {
-                val root = readRoot()
-                val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
-                val index = findIndex(items, conversationId)
-                if (index >= 0) items.remove(index)
-                root.put(KEY_CONVERSATIONS, items)
-                writeRoot(root)
-            }
-        }
-
-    override suspend fun deleteAllConversations() = withContext(Dispatchers.IO) {
+    override suspend fun deleteConversation(conversationId: String) = withContext(Dispatchers.IO) {
         mutex.withLock {
-            // Persist the empty history first. If this fails, keep the recovery copy.
-            writeRoot(JSONObject().put(KEY_CONVERSATIONS, JSONArray()))
-            if (corruptBackup.exists() && !corruptBackup.delete()) {
-                throw IllegalStateException("Could not remove the damaged-history recovery copy")
-            }
-            tempFile.delete()
+            val root = readRoot()
+            val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
+            val index = findIndex(items, conversationId)
+            if (index >= 0) items.remove(index)
+            root.put(KEY_CONVERSATIONS, items)
+            writeRoot(root)
         }
     }
 
-    private val tempFile: File
-        get() = File(directory, TEMP_FILE_NAME)
-
-    private fun readRoot(): JSONObject {
-        if (!file.exists()) return JSONObject().put(KEY_CONVERSATIONS, JSONArray())
-        return try {
-            JSONObject(file.readText(Charsets.UTF_8)).also {
-                if (it.optJSONArray(KEY_CONVERSATIONS) == null) {
-                    it.put(KEY_CONVERSATIONS, JSONArray())
+    override suspend fun deleteAllConversations() = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            writeRoot(JSONObject().put(KEY_CONVERSATIONS, JSONArray()))
+            listOf(
+                encryptedCorruptBackup, encryptedLegacyCorruptBackup, legacyFile, legacyCorruptBackup,
+                File(directory, ENCRYPTED_TEMP_FILE),
+                File(directory, ENCRYPTED_CORRUPT_TEMP_FILE),
+                File(directory, ENCRYPTED_LEGACY_CORRUPT_TEMP_FILE)
+            ).forEach {
+                if (it.exists() && !it.delete()) {
+                    throw IllegalStateException("Could not remove local history file: " + it.name)
                 }
             }
-        } catch (_: Exception) {
-            // Preserve the damaged file for recovery; clear-all explicitly removes this copy.
-            if (!corruptBackup.exists()) file.copyTo(corruptBackup, overwrite = false)
-            JSONObject().put(KEY_CONVERSATIONS, JSONArray())
+        }
+    }
+
+    private fun readRoot(): JSONObject {
+        migrateLegacyFilesIfNeeded()
+        if (!encryptedFile.exists()) return JSONObject().put(KEY_CONVERSATIONS, JSONArray())
+        val plain = cipher.decrypt(encryptedFile.readBytes()).toString(Charsets.UTF_8)
+        return JSONObject(plain).also {
+            if (it.optJSONArray(KEY_CONVERSATIONS) == null) it.put(KEY_CONVERSATIONS, JSONArray())
+        }
+    }
+
+    /**
+     * Never deletes a legacy plaintext copy until its encrypted replacement has been
+     * written, decrypted, and compared byte-for-byte. Safe to retry after interruption.
+     */
+    private fun migrateLegacyFilesIfNeeded() {
+        if (!encryptedFile.exists()) {
+            val legacyBytes = if (legacyFile.exists()) legacyFile.readBytes() else null
+            if (legacyBytes != null) {
+                val valid = runCatching {
+                    JSONObject(legacyBytes.toString(Charsets.UTF_8))
+                    true
+                }.getOrDefault(false)
+                if (valid) {
+                    writeEncryptedFile(encryptedFile, legacyBytes)
+                } else {
+                    writeEncryptedFile(encryptedCorruptBackup, legacyBytes)
+                    writeEncryptedFile(encryptedFile, emptyHistoryBytes())
+                }
+                if (legacyFile.exists() && !legacyFile.delete()) {
+                    throw IllegalStateException("Could not remove migrated plaintext history")
+                }
+            } else if (legacyCorruptBackup.exists()) {
+                writeEncryptedFile(encryptedLegacyCorruptBackup, legacyCorruptBackup.readBytes())
+                writeEncryptedFile(encryptedFile, emptyHistoryBytes())
+            }
+        }
+
+        if (encryptedFile.exists()) {
+            val current = cipher.decrypt(encryptedFile.readBytes())
+            if (legacyFile.exists()) {
+                val bytes = legacyFile.readBytes()
+                val valid = runCatching {
+                    JSONObject(bytes.toString(Charsets.UTF_8))
+                    true
+                }.getOrDefault(false)
+                if (valid && current.contentEquals(bytes)) {
+                    if (!legacyFile.delete()) throw IllegalStateException("Could not remove migrated plaintext history")
+                } else if (!valid && encryptedCorruptBackup.exists()) {
+                    verifyEncryptedFile(encryptedCorruptBackup, bytes)
+                    if (!legacyFile.delete()) throw IllegalStateException("Could not remove migrated damaged history")
+                }
+            }
+            if (legacyCorruptBackup.exists()) {
+                val bytes = legacyCorruptBackup.readBytes()
+                if (!encryptedLegacyCorruptBackup.exists()) writeEncryptedFile(encryptedLegacyCorruptBackup, bytes)
+                else verifyEncryptedFile(encryptedLegacyCorruptBackup, bytes)
+                if (!legacyCorruptBackup.delete()) throw IllegalStateException("Could not remove plaintext recovery copy")
+            }
         }
     }
 
     private fun writeRoot(root: JSONObject) {
-        val bytes = root.toString().toByteArray(Charsets.UTF_8)
-        FileOutputStream(tempFile).use { output ->
-            output.write(bytes)
-            output.fd.sync()
-        }
+        writeEncryptedFile(encryptedFile, root.toString().toByteArray(Charsets.UTF_8))
+    }
 
+    private fun writeEncryptedFile(target: File, plain: ByteArray) {
+        val temporary = File(directory, target.name + ".tmp")
+        FileOutputStream(temporary).use {
+            it.write(cipher.encrypt(plain))
+            it.fd.sync()
+        }
+        verifyEncryptedFile(temporary, plain)
         try {
             try {
-                Files.move(
-                    tempFile.toPath(),
-                    file.toPath(),
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING
-                )
+                Files.move(temporary.toPath(), target.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
             } catch (_: AtomicMoveNotSupportedException) {
-                // Same-directory replacement avoids the old unsafe truncate-and-rewrite fallback.
-                Files.move(
-                    tempFile.toPath(),
-                    file.toPath(),
-                    StandardCopyOption.REPLACE_EXISTING
-                )
+                Files.move(temporary.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
             }
         } catch (failure: Exception) {
-            // Keep the previous history intact and surface the failure to the UI.
+            temporary.delete()
             throw failure
         }
+        verifyEncryptedFile(target, plain)
     }
 
-    private fun trimMessages(source: JSONArray): JSONArray {
-        val retained = (0 until source.length())
-            .mapNotNull { source.optJSONObject(it) }
-            .sortedBy { it.optLong("id") }
-            .takeLast(MAX_MESSAGES_PER_CONVERSATION)
-        return JSONArray(retained)
+    private fun verifyEncryptedFile(target: File, expected: ByteArray) {
+        check(target.exists()) { "Encrypted history file was not created" }
+        check(cipher.decrypt(target.readBytes()).contentEquals(expected)) { "Encrypted history verification failed" }
     }
 
-    private fun trimConversations(source: JSONArray): JSONArray {
-        val values = (0 until source.length())
-            .mapNotNull { source.optJSONObject(it) }
-            .sortedByDescending { it.optLong("updatedAtEpochMillis") }
-            .take(MAX_CONVERSATIONS)
-        return JSONArray(values)
-    }
+    private fun emptyHistoryBytes() =
+        JSONObject().put(KEY_CONVERSATIONS, JSONArray()).toString().toByteArray(Charsets.UTF_8)
+
+    private fun trimMessages(source: JSONArray): JSONArray = JSONArray(
+        (0 until source.length()).mapNotNull { source.optJSONObject(it) }
+            .sortedBy { it.optLong("id") }.takeLast(MAX_MESSAGES_PER_CONVERSATION)
+    )
+
+    private fun trimConversations(source: JSONArray): JSONArray = JSONArray(
+        (0 until source.length()).mapNotNull { source.optJSONObject(it) }
+            .sortedByDescending { it.optLong("updatedAtEpochMillis") }.take(MAX_CONVERSATIONS)
+    )
 
     private fun findConversation(root: JSONObject, id: String): JSONObject? {
         val items = root.optJSONArray(KEY_CONVERSATIONS) ?: return null
@@ -229,21 +257,19 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
     }
 
     private fun findIndex(items: JSONArray, id: String): Int =
-        (0 until items.length()).firstOrNull {
-            items.optJSONObject(it)?.optString("id") == id
-        } ?: -1
+        (0 until items.length()).firstOrNull { items.optJSONObject(it)?.optString("id") == id } ?: -1
 
     private fun JSONArray?.toConversationList(): List<Conversation> {
         if (this == null) return emptyList()
         return (0 until length()).mapNotNull { index ->
-            optJSONObject(index)?.let { json ->
+            optJSONObject(index)?.let {
                 Conversation(
-                    id = json.optString("id"),
-                    title = json.optString("title", "گفت‌وگوی تازه"),
-                    createdAtEpochMillis = json.optLong("createdAtEpochMillis"),
-                    updatedAtEpochMillis = json.optLong("updatedAtEpochMillis"),
-                    messageCount = json.optInt("messageCount"),
-                    isPinned = json.optBoolean("isPinned")
+                    id = it.optString("id"),
+                    title = it.optString("title", "گفت‌وگوی تازه"),
+                    createdAtEpochMillis = it.optLong("createdAtEpochMillis"),
+                    updatedAtEpochMillis = it.optLong("updatedAtEpochMillis"),
+                    messageCount = it.optInt("messageCount"),
+                    isPinned = it.optBoolean("isPinned")
                 )
             }
         }
@@ -252,33 +278,30 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
     private fun JSONArray?.toMessageList(): List<ChatMessage> {
         if (this == null) return emptyList()
         return (0 until length()).mapNotNull { index ->
-            optJSONObject(index)?.let { json ->
-                ChatMessage(
-                    id = json.optLong("id"),
-                    text = json.optString("text"),
-                    fromUser = json.optBoolean("fromUser")
-                )
+            optJSONObject(index)?.let {
+                ChatMessage(it.optLong("id"), it.optString("text"), it.optBoolean("fromUser"))
             }
         }
     }
 
     private fun Conversation.toJson() = JSONObject()
-        .put("id", id)
-        .put("title", title.take(MAX_TITLE_CHARS))
+        .put("id", id).put("title", title.take(MAX_TITLE_CHARS))
         .put("createdAtEpochMillis", createdAtEpochMillis)
         .put("updatedAtEpochMillis", updatedAtEpochMillis)
-        .put("messageCount", messageCount)
-        .put("isPinned", isPinned)
+        .put("messageCount", messageCount).put("isPinned", isPinned)
 
     private fun ChatMessage.toJson() = JSONObject()
-        .put("id", id)
-        .put("text", text.take(MAX_MESSAGE_CHARS))
-        .put("fromUser", fromUser)
+        .put("id", id).put("text", text.take(MAX_MESSAGE_CHARS)).put("fromUser", fromUser)
 
     private companion object {
-        const val HISTORY_FILE = "atlas_chat_history.json"
-        const val TEMP_FILE_NAME = "atlas_chat_history.json.tmp"
-        const val CORRUPT_BACKUP_FILE = "atlas_chat_history.json.corrupt"
+        const val ENCRYPTED_HISTORY_FILE = "atlas_chat_history.enc"
+        const val LEGACY_HISTORY_FILE = "atlas_chat_history.json"
+        const val LEGACY_CORRUPT_FILE = "atlas_chat_history.json.corrupt"
+        const val ENCRYPTED_CORRUPT_FILE = "atlas_chat_history.corrupt.enc"
+        const val ENCRYPTED_LEGACY_CORRUPT_FILE = "atlas_chat_history.legacy-corrupt.enc"
+        const val ENCRYPTED_TEMP_FILE = "atlas_chat_history.enc.tmp"
+        const val ENCRYPTED_CORRUPT_TEMP_FILE = "atlas_chat_history.corrupt.enc.tmp"
+        const val ENCRYPTED_LEGACY_CORRUPT_TEMP_FILE = "atlas_chat_history.legacy-corrupt.enc.tmp"
         const val KEY_CONVERSATIONS = "conversations"
         const val KEY_MESSAGES = "messages"
         const val MAX_CONVERSATIONS = 40
