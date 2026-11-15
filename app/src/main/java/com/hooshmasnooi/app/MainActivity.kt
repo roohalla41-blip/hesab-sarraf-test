@@ -279,8 +279,12 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent {
-            MaterialTheme(
-                colorScheme = darkColorScheme(
+            val preferences = getSharedPreferences("atlas_preferences", MODE_PRIVATE)
+            var darkThemeEnabled by remember {
+                mutableStateOf(preferences.getBoolean("dark_theme", true))
+            }
+            val appColors = if (darkThemeEnabled) {
+                darkColorScheme(
                     primary = Color(0xFF8B83FF),
                     onPrimary = Color.White,
                     primaryContainer = Color(0xFF292A55),
@@ -293,17 +297,37 @@ class MainActivity : ComponentActivity() {
                     onSurface = Color(0xFFEAF1FC),
                     onSurfaceVariant = Color(0xFF9AAEC5)
                 )
-            ) {
+            } else {
+                lightColorScheme(
+                    primary = Color(0xFF5148B8),
+                    onPrimary = Color.White,
+                    primaryContainer = Color(0xFFE7E4FF),
+                    onPrimaryContainer = Color(0xFF201B65),
+                    secondary = Color(0xFF087F78),
+                    secondaryContainer = Color(0xFFD2F4EF),
+                    background = Color(0xFFF5F7FC),
+                    surface = Color(0xFFFFFFFF),
+                    surfaceVariant = Color(0xFFE9EDF5),
+                    onSurface = Color(0xFF172033),
+                    onSurfaceVariant = Color(0xFF59677D)
+                )
+            }
+            MaterialTheme(colorScheme = appColors) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                     AtlasApp(
-                    gmailStatus = gmailStatus,
-                    gmailMessages = gmailMessages,
-                    gmailLoading = gmailLoading,
-                    onConnectGmail = { connectGmail() },
-                    onRefreshGmail = { loadRecentGmail() },
-                    onDisconnectGmail = { disconnectGmail() },
-                    onReadGmailForChat = { onResult -> readGmailForChat(onResult) }
-                )
+                        gmailStatus = gmailStatus,
+                        gmailMessages = gmailMessages,
+                        gmailLoading = gmailLoading,
+                        onConnectGmail = { connectGmail() },
+                        onRefreshGmail = { loadRecentGmail() },
+                        onDisconnectGmail = { disconnectGmail() },
+                        onReadGmailForChat = { onResult -> readGmailForChat(onResult) },
+                        darkThemeEnabled = darkThemeEnabled,
+                        onThemeToggle = {
+                            darkThemeEnabled = !darkThemeEnabled
+                            preferences.edit().putBoolean("dark_theme", darkThemeEnabled).apply()
+                        }
+                    )
                 }
             }
         }
@@ -319,14 +343,14 @@ private fun AtlasApp(
     onConnectGmail: () -> Unit,
     onRefreshGmail: () -> Unit,
     onDisconnectGmail: () -> Unit,
-    onReadGmailForChat: ((String) -> Unit) -> Unit
+    onReadGmailForChat: ((String) -> Unit) -> Unit,
+    darkThemeEnabled: Boolean,
+    onThemeToggle: () -> Unit
 ) {
     val appContext = LocalContext.current.applicationContext
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
-    var darkPreview by remember { mutableStateOf(false) }
-    var languagePreview by remember { mutableStateOf("فارسی") }
     val messages = remember { mutableStateListOf<ChatMessage>().apply { addAll(ChatStorage.load(appContext)) } }
     var nextId by remember { mutableStateOf((messages.maxOfOrNull { it.id } ?: 0L) + 1L) }
     val listState = rememberLazyListState()
@@ -556,10 +580,8 @@ private fun AtlasApp(
                 "profile" -> ProfilePage(Modifier.fillMaxSize().padding(padding))
                 "plans" -> PlansPage(Modifier.fillMaxSize().padding(padding))
                 "settings" -> SettingsPage(
-                    darkPreview,
-                    { darkPreview = !darkPreview },
-                    languagePreview,
-                    { languagePreview = it },
+                    darkThemeEnabled,
+                    onThemeToggle,
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "privacy" -> FeaturePage(
@@ -585,7 +607,7 @@ private fun AtlasApp(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("رابط اصلی Android: در حال توسعه")
-                    Text("زبان پیش‌نمایش: " + languagePreview)
+                    Text("زبان رابط فعلی: فارسی")
                     Text("هوش مصنوعی: هنوز متصل نشده")
                     Text("دیتابیس و حساب آنلاین: هنوز متصل نشده")
                     Text("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد")
@@ -966,26 +988,46 @@ private fun PlansPage(modifier: Modifier = Modifier) {
 
 @Composable
 private fun SettingsPage(
-    darkPreview: Boolean,
+    darkThemeEnabled: Boolean,
     onThemeToggle: () -> Unit,
-    language: String,
-    onLanguageChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تنظیمات", "گزینه‌های پایه برای آماده‌سازی تجربه کاربری.")
-        InfoCard("ظاهر برنامه", if (darkPreview) "حالت تاریک انتخاب شده (پیش‌نمایش)" else "حالت روشن انتخاب شده (پیش‌نمایش)")
-        Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) { Text("تغییر حالت نمایشی") }
-        Spacer(Modifier.height(12.dp))
-        InfoCard("زبان رابط", "زبان فعلی: " + language)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { onLanguageChange("فارسی") }) { Text("فارسی") }
-            Button(onClick = { onLanguageChange("English (planned)") }) { Text("English") }
-            Button(onClick = { onLanguageChange("دری (planned)") }) { Text("دری") }
+        PageTitle("تنظیمات", "کنترل تجربه ظاهری و ترجیحات برنامه.")
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("ظاهر برنامه", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (darkThemeEnabled) "حالت تاریک فعال است" else "حالت روشن فعال است",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+                Text(if (darkThemeEnabled) "تاریک" else "روشن", color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
         }
+        Spacer(Modifier.height(10.dp))
+        Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) {
+            Text(if (darkThemeEnabled) "فعال‌کردن حالت روشن" else "فعال‌کردن حالت تاریک")
+        }
+        Spacer(Modifier.height(18.dp))
+        Text("زبان و منطقه", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(8.dp))
+        InfoCard("زبان رابط", "فارسی در نسخه فعلی فعال است. ترجمه کامل انگلیسی و دری پیش از انتشار اضافه و آزمایش می‌شود.")
         Spacer(Modifier.height(12.dp))
-        InfoCard("دسترس‌پذیری", "خوانایی، کنتراست و پشتیبانی صفحه‌خوان در مرحله تکمیل")
-        InfoCard("اعلان‌ها", "تنظیم اعلان‌ها پس از ایجاد حساب و سرویس آنلاین")
+        Text("تجربه و دسترس‌پذیری", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(8.dp))
+        InfoCard("دسترس‌پذیری", "بهینه‌سازی صفحه‌خوان، اندازه متن و کنتراست در مرحله کنترل کیفیت قرار دارد.")
+        Spacer(Modifier.height(8.dp))
+        InfoCard("اعلان‌ها", "اعلان‌های حساب و همگام‌سازی پس از راه‌اندازی سرویس حساب فعال می‌شوند.")
+        Spacer(Modifier.height(8.dp))
+        InfoCard("ذخیره‌سازی", "گفتگوها فعلاً فقط در فضای خصوصی همین دستگاه ذخیره می‌شوند.")
     }
 }
 
