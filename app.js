@@ -147,6 +147,16 @@ function renderPanel(panel) {
         ${featureCard("♫","ورودی و خروجی صوت","گفتار به متن و خواندن پاسخ","بعداً")}
         ${featureCard("⇧","اشتراک‌گذاری خروجی","کپی، خروجی گرفتن و اشتراک مکالمه","بعداً")}
       </div><p class="disclaimer">ابزارها تا زمان پیاده‌سازی، اتصال امن و آزمایش واقعی غیرفعال می‌مانند.</p>`,
+    integrations: `
+      <div class="page-heading"><div><div class="eyebrow">CONNECTED APPS</div><h2>مرکز اتصال برنامه‌ها</h2><p>وضعیت واقعی هر اتصال را ببین؛ موارد نمایشی به‌عنوان اتصال فعال معرفی نمی‌شوند.</p></div></div>
+      <div class="security-banner"><span>⇄</span><div><b>اتصال فقط با اجازه کاربر</b><p>هر سرویس باید مجوز جداگانه و محدود به نیاز همان قابلیت دریافت کند.</p></div></div>
+      <div class="feature-grid">
+        ${featureCard("G","Google Gmail","در کد Android مسیر OAuth فقط‌خواندنی آماده شده؛ آزمایش روی گوشی واقعی هنوز انجام نشده است.","آزمایش لازم")}
+        ${featureCard("⌘","GitHub","اتصال حساب کاربر، دسترسی مخزن و مدیریت مجوزها هنوز پیاده‌سازی نشده است.","غیرفعال")}
+        ${featureCard("▣","Google Drive","انتخاب فایل، مجوز محدود و دریافت امن فایل هنوز پیاده‌سازی نشده است.","غیرفعال")}
+        ${featureCard("◷","Google Calendar","خواندن رویدادها و مدیریت مجوز تقویم هنوز پیاده‌سازی نشده است.","غیرفعال")}
+      </div>
+      <p class="disclaimer">این صفحه فقط وضعیت توسعه را نشان می‌دهد. هیچ‌یک از این سرویس‌ها از داخل پیش‌نمایش وب متصل نمی‌شوند.</p>`,
     profile: `
       <div class="page-heading"><div><div class="eyebrow">ACCOUNT</div><h2>حساب کاربری</h2><p>نمای کلی حساب در نسخه ساختاری.</p></div></div>
       <div class="profile-card"><div class="profile-avatar">A</div><div><h3>کاربر مهمان</h3><p class="muted">بدون ورود • حساب آنلاین ایجاد نشده</p><span class="state-pill">حالت محلی نمایشی</span></div></div>
