@@ -2,6 +2,7 @@ package com.hooshmasnooi.app.data.local
 
 import android.content.Context
 import com.hooshmasnooi.app.domain.model.ChatMessage
+import com.hooshmasnooi.app.core.AtlasText
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -68,7 +69,7 @@ object ChatStorage {
                     add(
                         StoredConversation(
                             id = id,
-                            title = item.optString("title", "گفت‌وگوی جدید"),
+                            title = item.optString("title", AtlasText.of("گفت‌وگوی جدید", "New conversation")),
                             createdAtEpochMillis = item.optLong("createdAt", 0L),
                             updatedAtEpochMillis = item.optLong("updatedAt", 0L),
                             messages = parseMessages(item.optJSONArray("messages"))
@@ -83,7 +84,7 @@ object ChatStorage {
         val now = System.currentTimeMillis()
         val conversation = StoredConversation(
             id = UUID.randomUUID().toString(),
-            title = "گفت‌وگوی جدید",
+            title = AtlasText.of("گفت‌وگوی جدید", "New conversation"),
             createdAtEpochMillis = now,
             updatedAtEpochMillis = now,
             messages = emptyList()
@@ -114,7 +115,7 @@ object ChatStorage {
         val now = System.currentTimeMillis()
         val updated = StoredConversation(
             id = id,
-            title = if (messages.isEmpty()) existing?.title ?: "گفت‌وگوی جدید" else titleFor(messages),
+            title = if (messages.isEmpty()) existing?.title ?: AtlasText.of("گفت‌وگوی جدید", "New conversation") else titleFor(messages),
             createdAtEpochMillis = existing?.createdAtEpochMillis ?: now,
             updatedAtEpochMillis = now,
             messages = messages.takeLast(MAX_MESSAGES)
@@ -154,7 +155,7 @@ object ChatStorage {
 
     private fun titleFor(messages: List<ChatMessage>): String {
         val firstUserMessage = messages.firstOrNull { it.fromUser }?.text?.trim().orEmpty()
-        if (firstUserMessage.isBlank()) return "گفت‌وگوی جدید"
+        if (firstUserMessage.isBlank()) return AtlasText.of("گفت‌وگوی جدید", "New conversation")
         return if (firstUserMessage.length > 44) firstUserMessage.take(44).trimEnd() + "…" else firstUserMessage
     }
 
