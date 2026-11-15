@@ -848,7 +848,7 @@ private fun AtlasToolCard(
     subtitle: String,
     tint: Color,
     modifier: Modifier = Modifier,
-    state: String = AtlasText.of("در نقشه راه", "Planned")
+    state: String = AtlasText.of("به‌زودی", "Coming soon")
 ) {
     Card(
         modifier = modifier.height(120.dp),
