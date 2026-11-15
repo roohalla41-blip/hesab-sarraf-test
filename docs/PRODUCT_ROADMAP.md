@@ -7,19 +7,20 @@
 - [x] Server API, privacy, and safety design notes
 - [x] Feature catalog with explicit availability states
 - [x] Interactive browser preview shell for primary product areas
+- [x] Adaptive Android launcher icon and monochrome icon
 
 ## Android product structure
 - [x] Primary navigation and first-pass screens
 - [x] Branded navigation drawer with grouped destinations
 - [x] Guest profile screen with local-data disclosures
 - [x] Persistent light/dark appearance preference
-- [x] Multiple local conversations: create, open, continue, and delete with confirmation
+- [x] Multiple local conversations: create, open, continue, rename, search, and delete with confirmation
 - [x] Migration from the previous single-conversation local store
-- [x] Local persistence for messages and conversation titles
+- [x] Copy individual chat messages
 - [x] Explicit user-facing state when the general AI engine is not connected
-- [ ] Rename and search conversations
-- [ ] Full chat actions: copy, edit/resend, regenerate, stop, share, and feedback
+- [ ] Replace the bounded SharedPreferences conversation store with a transactional local database
 - [ ] Complete resource-based localization and device-language policy
+- [ ] Full chat actions: edit/resend, regenerate, stop, share, and feedback
 - [ ] Attachment picker and secure local staging
 - [ ] Accessibility and responsive-layout review
 - [ ] UI tests and device-level review
