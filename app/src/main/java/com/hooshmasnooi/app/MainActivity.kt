@@ -712,12 +712,12 @@ private fun AtlasApp(
             title = { Text(AtlasText.of("وضعیت ATLAS AI", "ATLAS AI status")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(AtlasText.of("رابط اصلی Android: در حال توسعه", "Android interface: in development"))
+                    Text(AtlasText.of("رابط اصلی Android: فعال", "Android interface: active"))
                     Text(AtlasText.of("زبان رابط فعلی: فارسی یا دری", "Current interface language: English"))
-                    Text(AtlasText.of("هوش مصنوعی: هنوز متصل نشده", "AI engine: not connected yet"))
+                    Text(AtlasText.of("هوش مصنوعی: اتصال به سرویس آنلاین پیکربندی شده", "AI engine: online service configured"))
                     Text(AtlasText.of("دیتابیس و حساب آنلاین: هنوز متصل نشده", "Cloud database and account: not connected"))
                     Text(AtlasText.of("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد", "Secrets are never placed in the app or GitHub"))
-                    Text(AtlasText.of("گفت‌وگو: ذخیره محلی فعال؛ اتصال هوش مصنوعی و آزمون نهایی باقی است.", "Chat: local storage is active; AI connection and final testing remain."))
+                    Text(AtlasText.of("گفت‌وگو: ذخیره محلی فعال است و درخواست‌ها به موتور آنلاین اطلس ارسال می‌شوند.", "Chat: local storage is active and requests are sent to the ATLAS online engine."))
                 }
             },
             confirmButton = { TextButton(onClick = { showStatus = false }) { Text(AtlasText.of("بستن", "Close")) } }
@@ -785,7 +785,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
                 Box(Modifier.size(8.dp).background(Color(0xFFFFC66D), CircleShape))
                 Spacer(Modifier.width(9.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(AtlasText.of("نسخه آنلاین", "Preview build"), color = Color(0xFFEAF1FC), fontSize = 12.sp,
+                    Text(AtlasText.of("نسخه آنلاین", "Online release"), color = Color(0xFFEAF1FC), fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold)
                     Text(AtlasText.of("برخی ابزارها هنوز به سرویس واقعی متصل نیستند", "Some tools are not connected to live services yet"),
                         color = Color(0xFF91A5BF), fontSize = 10.sp)
@@ -835,7 +835,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
             }
             Spacer(Modifier.height(9.dp))
         }
-        Text(AtlasText.of("قابلیت‌هایی که سرویس اختصاصی آن‌ها هنوز متصل نشده است، در حال توسعه هستند.", "Preview features remain inactive until their services are connected and tested."),
+        Text(AtlasText.of("قابلیت‌هایی که سرویس اختصاصی آن‌ها هنوز متصل نشده است، در حال توسعه هستند.", "Features that require dedicated services are still in development."),
             color = Color(0xFF8195AE), fontSize = 10.sp,
             modifier = Modifier.padding(top = 7.dp, bottom = 12.dp))
     }
@@ -865,7 +865,7 @@ private fun AtlasToolCard(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                Text(AtlasText.of("در حال توسعه", "In preparation"), fontSize = 8.sp, color = Color(0xFF91A5BF))
+                Text(AtlasText.of("در حال توسعه", "In development"), fontSize = 8.sp, color = Color(0xFF91A5BF))
             }
             Column {
                 Text(title, color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
@@ -1361,10 +1361,10 @@ private fun SettingsPage(
 private fun HelpPage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle(AtlasText.of("راهنما و پشتیبانی", "Help & support"), AtlasText.of("راهنمای استفاده از اطلس AI.", "How to use ATLAS AI."))
-        InfoCard(AtlasText.of("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "Does ATLAS provide AI answers?"), AtlasText.of("خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.", "Not yet; the AI engine is not connected."))
+        InfoCard(AtlasText.of("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "Does ATLAS provide AI answers?"), AtlasText.of("بله؛ گفت‌وگوی عمومی درخواست‌ها را به موتور آنلاین اطلس می‌فرستد.", "Yes; general chat sends requests to the ATLAS online engine."))
         InfoCard(AtlasText.of("آیا برای دیدن ساختار کلید لازم است؟", "Do I need a key to view the app structure?"), AtlasText.of("خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.", "No; the UI and screens work without API keys."))
         InfoCard(AtlasText.of("آیا داده‌ها ذخیره می‌شوند؟", "Is my data stored?"), AtlasText.of("پیام‌های گفت‌وگو به‌صورت محلی و خصوصی روی همین دستگاه ذخیره می‌شوند.", "Chat messages are stored locally in the private app storage on this device."))
-        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("راه ارتباطی رسمی در زمان در حال توسعه انتشار اضافه خواهد شد.", "Official support contact details will be added before release."))
+        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("اطلاعات پشتیبانی رسمی در حال تکمیل است.", "Official support information is being completed."))
     }
 }
 
