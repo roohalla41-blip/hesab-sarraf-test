@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101d32">
-<meta name="description" content="پیش‌نمایش تعاملی ساختار برنامه ATLAS AI">
+<meta name="description" content="نسخه آنلاین ATLAS AI">
 <title>ATLAS AI | اطلس</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
@@ -25,12 +25,12 @@
     <button class="nav-item" data-panel="settings"><span>⚙</span> تنظیمات</button>
     <button class="nav-item" data-panel="privacy"><span>▣</span> حریم خصوصی</button>
     <button class="nav-item" data-panel="help"><span>?</span> راهنما و پشتیبانی</button>
-    <div class="sidebar-bottom"><div class="avatar">A</div><div><b>مهمان اطلس</b><small>نسخه پیش‌نمایش</small></div><span class="dots">•••</span></div>
+    <div class="sidebar-bottom"><div class="avatar">A</div><div><b>مهمان اطلس</b><small>نسخه آنلاین</small></div><span class="dots">•••</span></div>
   </aside>
   <main class="main">
     <header class="topbar">
       <button class="mobile-menu" id="menuToggle" aria-label="منو">☰</button>
-      <div class="top-title"><span class="status-dot"></span><b id="sectionTitle">دستیار اطلس</b><small>پیش‌نمایش ساختار</small></div>
+      <div class="top-title"><span class="status-dot"></span><b id="sectionTitle">دستیار اطلس</b><small>دستیار هوشمند آنلاین</small></div>
       <div class="top-actions"><button class="language" id="languageToggle">FA / EN</button><button class="icon-button" id="themeToggle" aria-label="تغییر ظاهر">◐</button></div>
     </header>
     <section class="content" id="content">
@@ -50,14 +50,14 @@
         <section class="command-center" aria-label="ابزارهای هوشمند اطلس">
           <div class="command-heading"><b>مرکز ابزارهای هوشمند</b><span>قابلیت‌های اطلس</span></div>
           <div class="command-grid">
-            <div class="command-tile"><span class="command-icon violet">✦</span><b>چت هوشمند</b><small>گفتگو و پاسخ‌گویی</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon blue">▧</span><b>ساخت تصویر</b><small>خلق تصویر با هوش مصنوعی</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon amber">▶</span><b>ساخت ویدیو</b><small>تبدیل ایده به ویدیو</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon mint">♫</span><b>دستیار صوتی</b><small>گفتار و خواندن پاسخ</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon blue">⌘</span><b>برنامه‌نویسی</b><small>کدنویسی و عیب‌یابی</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon pink">▤</span><b>تحلیل اسناد</b><small>فایل و محتوای متنی</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon mint">⌕</span><b>تحقیق وب</b><small>جستجو و بررسی منابع</small><i>در آماده‌سازی</i></div>
-            <div class="command-tile"><span class="command-icon amber">◎</span><b>تحلیل تخصصی</b><small>یادگیری و حل مسئله</small><i>در آماده‌سازی</i></div>
+            <div class="command-tile"><span class="command-icon violet">✦</span><b>چت هوشمند</b><small>گفتگو و پاسخ‌گویی</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon blue">▧</span><b>ساخت تصویر</b><small>خلق تصویر با هوش مصنوعی</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon amber">▶</span><b>ساخت ویدیو</b><small>تبدیل ایده به ویدیو</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon mint">♫</span><b>دستیار صوتی</b><small>گفتار و خواندن پاسخ</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon blue">⌘</span><b>برنامه‌نویسی</b><small>کدنویسی و عیب‌یابی</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon pink">▤</span><b>تحلیل اسناد</b><small>فایل و محتوای متنی</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon mint">⌕</span><b>تحقیق وب</b><small>جستجو و بررسی منابع</small><i>در حال توسعه</i></div>
+            <div class="command-tile"><span class="command-icon amber">◎</span><b>تحلیل تخصصی</b><small>یادگیری و حل مسئله</small><i>در حال توسعه</i></div>
           </div>
         </section>
         <div class="suggestions">
@@ -70,11 +70,11 @@
       <div class="messages" id="messages" hidden></div>
       <div class="composer-wrap" id="composerWrap">
         <div class="composer">
-          <button class="attach" id="attach" title="پیوست نمایشی">＋</button>
+          <button class="attach" id="attach" title="پیوست">＋</button>
           <textarea id="prompt" rows="1" placeholder="از اطلس هر چیزی بپرس..."></textarea>
           <button class="send" id="send" aria-label="ارسال">↑</button>
         </div>
-        <div class="composer-foot"><span>✦ این پیش‌نمایش پاسخ هوش مصنوعی تولید نمی‌کند.</span><span>نسخه ساختاری</span></div>
+        <div class="composer-foot"><span>✦ گفت‌وگوی آنلاین اطلس</span><span>نسخه آنلاین</span></div>
       </div>
     </section>
     <div class="toast" id="toast" role="status"></div>
