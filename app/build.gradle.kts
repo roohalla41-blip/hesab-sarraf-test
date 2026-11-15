@@ -28,7 +28,7 @@ android {
     signingConfigs {
         create("release") {
             storeFile = System.getenv("ATLAS_UPLOAD_STORE_FILE")?.let { file(it) }
-                ?: file("$buildDir/atlas-upload-key-not-configured.jks")
+                ?: rootProject.file("atlas-upload-key-not-configured.jks")
             storePassword = System.getenv("ATLAS_UPLOAD_STORE_PASSWORD") ?: ""
             keyAlias = System.getenv("ATLAS_UPLOAD_KEY_ALIAS") ?: ""
             keyPassword = System.getenv("ATLAS_UPLOAD_KEY_PASSWORD") ?: ""
