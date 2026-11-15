@@ -572,92 +572,92 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
         modifier = modifier
             .background(
                 androidx.compose.ui.graphics.Brush.verticalGradient(
-                    listOf(Color(0xFF0D1A2B), Color(0xFF091321), Color(0xFF101A31))
+                    listOf(Color(0xFF0A1424), Color(0xFF0D1B2E), Color(0xFF101D30))
                 )
             )
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp, vertical = 22.dp),
+            .padding(horizontal = 20.dp, vertical = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
-            modifier = Modifier.size(82.dp),
-            shape = RoundedCornerShape(27.dp),
-            color = Color(0xFF292A55)
+            modifier = Modifier.size(76.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFF242B55)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Filled.AutoAwesome,
-                    contentDescription = "نشان اطلس",
-                    tint = Color(0xFFB9B2FF),
-                    modifier = Modifier.size(43.dp)
-                )
+                Icon(Icons.Filled.AutoAwesome, contentDescription = "ATLAS AI",
+                    tint = Color(0xFFC4BEFF), modifier = Modifier.size(38.dp))
             }
         }
-        Spacer(Modifier.height(16.dp))
-        Text("مرکز فرماندهی اطلس", fontSize = 12.sp, color = Color(0xFF70DCCE), fontWeight = FontWeight.SemiBold)
-        Spacer(Modifier.height(7.dp))
-        Text("سلام، من اطلس هستم", style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold, color = Color(0xFFF2F6FF))
+        Spacer(Modifier.height(14.dp))
+        Text("ATLAS AI  /  PERSONAL INTELLIGENCE", fontSize = 9.sp,
+            color = Color(0xFF70DCCE), fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Text(
-            "یک فضای هوشمند برای گفتگو، خلق محتوا، یادگیری و ساختن ایده‌ها.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFFA5B6CC)
-        )
+        Text("سلام، من اطلس هستم", style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold, color = Color(0xFFF2F6FF))
+        Spacer(Modifier.height(7.dp))
+        Text("یک فضای یکپارچه برای گفتگو، تحقیق و انجام کارهای هوشمند.",
+            style = MaterialTheme.typography.bodyMedium, color = Color(0xFFA9B9CE))
         Spacer(Modifier.height(18.dp))
-        Surface(
-            shape = RoundedCornerShape(50.dp),
-            color = Color(0xFF173B42),
-            modifier = Modifier.padding(bottom = 22.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(Modifier.size(7.dp).background(Color(0xFFFFC66D), CircleShape))
-                Spacer(Modifier.width(8.dp))
-                Text("نسخه ساختاری • اتصال سرویس‌ها در حال آماده‌سازی",
-                    color = Color(0xFFB8E9E2), fontSize = 10.sp)
+        Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFF172B3C)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).background(Color(0xFFFFC66D), CircleShape))
+                Spacer(Modifier.width(9.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("نسخه آزمایشی", color = Color(0xFFEAF1FC), fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold)
+                    Text("برخی ابزارها هنوز به سرویس واقعی متصل نیستند",
+                        color = Color(0xFF91A5BF), fontSize = 10.sp)
+                }
+                Text("۰.۱", color = Color(0xFFB8E9E2), fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold)
             }
         }
-
+        Spacer(Modifier.height(23.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("فضای کاری اطلس", color = Color(0xFFEAF1FC),
+                fontWeight = FontWeight.Bold, fontSize = 15.sp)
+            Spacer(Modifier.weight(1f))
+            Text("ابزارها", color = Color(0xFF8FA4BE), fontSize = 11.sp)
+        }
+        Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.ChatBubbleOutline, "چت هوشمند", "گفتگو و پاسخ‌گویی", Color(0xFF8F86FF), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Image, "ساخت تصویر", "خلق تصویر با هوش مصنوعی", Color(0xFF62B8FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.ChatBubbleOutline, "گفت‌وگوی هوشمند", "تعامل و پاسخ‌گویی", Color(0xFF9B91FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Image, "هوش تصویری", "تحلیل و تولید تصویر", Color(0xFF62B8FF), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.Movie, "ساخت ویدیو", "تبدیل ایده به ویدیو", Color(0xFFFFB86B), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Movie, "رسانه و ویدیو", "ابزارهای چندرسانه‌ای", Color(0xFFFFB86B), Modifier.weight(1f))
             AtlasToolCard(Icons.Filled.Mic, "دستیار صوتی", "گفتار و شنیدن پاسخ", Color(0xFF5ED9C8), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             AtlasToolCard(Icons.Filled.Code, "برنامه‌نویسی", "کدنویسی و عیب‌یابی", Color(0xFF79A9FF), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Description, "تحلیل اسناد", "فایل و محتوای متنی", Color(0xFFE2A7FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Description, "تحلیل اسناد", "کار با فایل و متن", Color(0xFFE2A7FF), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.TravelExplore, "تحقیق وب", "جستجو و بررسی منابع", Color(0xFF62D5B2), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Psychology, "تحلیل تخصصی", "یادگیری و حل مسئله", Color(0xFFFFD078), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.TravelExplore, "پژوهش وب", "جست‌وجوی منابع", Color(0xFF62D5B2), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Psychology, "تحلیل تخصصی", "حل مسئله و یادگیری", Color(0xFFFFD078), Modifier.weight(1f))
         }
-
-        Spacer(Modifier.height(23.dp))
-        Text("شروع سریع", modifier = Modifier.fillMaxWidth(),
+        Spacer(Modifier.height(24.dp))
+        Text("برای شروع انتخاب کنید", modifier = Modifier.fillMaxWidth(),
             color = Color(0xFFEAF1FC), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(10.dp))
         listOf(
-            Triple("✎", "نوشتن و ترجمه", "متن حرفه‌ای بنویس یا ترجمه کن"),
-            Triple("⌘", "برنامه‌نویسی", "کد را بررسی و خطاها را پیدا کن"),
-            Triple("◇", "یادگیری و تحقیق", "یک موضوع را مرحله‌به‌مرحله بررسی کن")
+            Triple("✎", "نگارش و ترجمه", "نوشتن، بازنویسی و ترجمه متن"),
+            Triple("⌘", "برنامه‌نویسی", "بررسی کد و یافتن خطاها"),
+            Triple("◇", "یادگیری و پژوهش", "بررسی مرحله‌ای یک موضوع")
         ).forEach { option ->
             SuggestionCard(option.first, option.second, option.third) {
-                onPromptClick("می‌خواهم در بخش " + option.second + " کمک بگیرم.")
+                onPromptClick("در زمینه " + option.second + " به من کمک کن.")
             }
             Spacer(Modifier.height(9.dp))
         }
-        Text("قابلیت‌های نمایشی تا زمان اتصال و آزمایش سرویس مربوطه فعال نیستند.",
+        Text("قابلیت‌های نمایشی تا زمان اتصال و آزمون سرویس مربوطه فعال نیستند.",
             color = Color(0xFF8195AE), fontSize = 10.sp,
-            modifier = Modifier.padding(top = 5.dp, bottom = 12.dp))
+            modifier = Modifier.padding(top = 7.dp, bottom = 12.dp))
     }
 }
 
@@ -921,18 +921,33 @@ private fun MessageBubble(message: ChatMessage) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.fromUser) Arrangement.Start else Arrangement.End
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(0.88f),
-            shape = RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomEnd = if (message.fromUser) 5.dp else 18.dp,
-                bottomStart = if (message.fromUser) 18.dp else 5.dp
-            ),
-            color = if (message.fromUser) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surfaceVariant
+        Column(
+            modifier = Modifier.fillMaxWidth(0.9f),
+            horizontalAlignment = if (message.fromUser) Alignment.Start else Alignment.End
         ) {
-            Text(message.text, modifier = Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                if (message.fromUser) "شما" else "ATLAS AI",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp)
+            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(
+                    topStart = 18.dp, topEnd = 18.dp,
+                    bottomEnd = if (message.fromUser) 5.dp else 18.dp,
+                    bottomStart = if (message.fromUser) 18.dp else 5.dp
+                ),
+                color = if (message.fromUser) Color(0xFF29345B)
+                    else MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Text(message.text, modifier = Modifier.padding(15.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface)
+            }
         }
+    }
+}}
     }
 }
