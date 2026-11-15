@@ -131,7 +131,7 @@ object ChatStorage {
         val activeId = preferences(context).getString(KEY_ACTIVE_CONVERSATION, null)
         if (activeId == conversationId) {
             if (all.isNotEmpty()) {
-                preferences.edit().putString(KEY_ACTIVE_CONVERSATION, all.first().id).apply()
+                preferences(context).edit().putString(KEY_ACTIVE_CONVERSATION, all.first().id).apply()
             } else {
                 createConversation(context)
             }
