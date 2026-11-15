@@ -10,9 +10,11 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class ChatStorageTest {
     private val context: Application
         get() = RuntimeEnvironment.getApplication()
@@ -39,6 +41,24 @@ class ChatStorageTest {
         assertEquals(51L, saved.first().id)
         assertEquals(350L, saved.last().id)
         assertEquals((51L..350L).toList(), saved.map { it.id })
+    }
+
+    @Test
+    fun conversationTitleDoesNotChangeWhenOldestMessageIsTrimmed() {
+        val conversation = ChatStorage.createConversation(context)
+        val firstBatch = (1L..350L).map { id ->
+            ChatMessage(id, "message-$id", fromUser = true)
+        }
+        ChatStorage.save(context, firstBatch, conversation.id)
+        val originalTitle = ChatStorage.loadAll(context).single().title
+
+        val nextBatch = (51L..351L).map { id ->
+            ChatMessage(id, "message-$id", fromUser = true)
+        }
+        ChatStorage.save(context, nextBatch, conversation.id)
+
+        assertEquals(originalTitle, ChatStorage.loadAll(context).single().title)
+        assertEquals(300, ChatStorage.loadConversation(context, conversation.id).size)
     }
 
     @Test
