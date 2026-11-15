@@ -1158,37 +1158,64 @@ private fun FeaturePage(
 @Composable
 private fun ProfilePage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle(AtlasText.of("حساب کاربری", "Account"), AtlasText.of("مدیریت هویت، نشست و اطلاعات شخصی در یک مکان.", "Manage your identity, session, and personal details in one place."))
+        PageTitle(
+            AtlasText.of("حساب کاربری", "Account"),
+            AtlasText.of("وضعیت حساب و محل نگهداری اطلاعاتت را ببین.", "Review account status and where your information is stored.")
+        )
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(22.dp),
             color = Color(0xFF172B43)
         ) {
-            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = Color(0xFF294B68), modifier = Modifier.size(58.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(AtlasText.of("م", "G"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+            Column(Modifier.padding(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = CircleShape, color = Color(0xFF294B68), modifier = Modifier.size(58.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("A", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+                        }
+                    }
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(AtlasText.of("حساب مهمان", "Guest account"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        Text(AtlasText.of("بدون ورود یا ثبت‌نام", "No sign-in or registration"), color = Color(0xFFB8C8DC), fontSize = 11.sp)
+                    }
+                    Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF294B59)) {
+                        Text(
+                            AtlasText.of("محلی", "Local"),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            color = Color(0xFF83E2D2), fontSize = 10.sp, fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(AtlasText.of("حساب مهمان", "Guest account"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                    Text(AtlasText.of("ذخیره‌سازی گفتگوها روی همین دستگاه", "Conversations are stored on this device"), color = Color(0xFFB8C8DC), fontSize = 11.sp)
-                    Spacer(Modifier.height(6.dp))
-                    Text(AtlasText.of("ورود آنلاین هنوز فعال نشده", "Online sign-in is not enabled yet"), color = Color(0xFF83E2D2), fontSize = 10.sp)
-                }
+                Spacer(Modifier.height(15.dp))
+                Text(
+                    AtlasText.of("اطلاعات این نسخه فقط در فضای خصوصی برنامه روی همین دستگاه نگهداری می‌شود.", "This version keeps its information in the app's private storage on this device."),
+                    color = Color(0xFFD5E1EF), style = MaterialTheme.typography.bodySmall
+                )
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Text(AtlasText.of("مدیریت حساب", "Account management"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(18.dp))
+        Text(AtlasText.of("وضعیت سرویس حساب", "Account service status"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("اطلاعات نمایه", "Profile information"), AtlasText.of("نام نمایشی و تصویر حساب پس از راه‌اندازی حساب امن قابل تنظیم خواهد بود.", "Display name and profile image will be configurable after secure accounts are implemented."))
+        InfoCard(
+            AtlasText.of("ورود و ثبت‌نام", "Sign-in and registration"),
+            AtlasText.of("هنوز راه‌اندازی نشده است؛ در حال حاضر حساب آنلاین یا همگام‌سازی بین دستگاه‌ها وجود ندارد.", "Not implemented yet; there is currently no online account or cross-device sync.")
+        )
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("امنیت و نشست‌ها", "Security and sessions"), AtlasText.of("ورود، خروج و مدیریت نشست‌ها هنوز پیاده‌سازی نشده‌اند.", "Sign-in, sign-out, and session management are not implemented yet."))
+        InfoCard(
+            AtlasText.of("اطلاعات نمایه", "Profile information"),
+            AtlasText.of("نام، تصویر و اطلاعات شخصی قابل ویرایش نیستند؛ این نسخه حساب واقعی ایجاد نمی‌کند.", "Name, photo, and personal details are not editable; this version does not create a real account.")
+        )
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("داده‌ها و حریم خصوصی", "Data and privacy"), AtlasText.of("گفتگوهای فعلی در فضای خصوصی برنامه ذخیره می‌شوند؛ ابزار خروجی‌گرفتن و حذف کامل داده‌ها در دست توسعه است.", "Current conversations are stored in the app's private space; data export and full deletion tools are still in development."))
+        InfoCard(
+            AtlasText.of("تاریخچه گفتگوها", "Conversation history"),
+            AtlasText.of("گفتگوها روی همین دستگاه ذخیره می‌شوند و از بخش تاریخچه می‌توانی آن‌ها را مدیریت یا حذف کنی.", "Conversations are stored on this device and can be managed or deleted from History.")
+        )
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("همگام‌سازی ابری", "Cloud sync"), AtlasText.of("فعلاً غیرفعال است؛ اطلاعات دستگاه به سرور ارسال نمی‌شود.", "Currently disabled; device data is not sent to a server."))
+        InfoCard(
+            AtlasText.of("اتصال Gmail", "Gmail connection"),
+            AtlasText.of("مجوز Gmail فقط برای خواندن ایمیل‌ها درخواست می‌شود. توکن دسترسی در حافظه موقت برنامه نگهداری می‌شود.", "Gmail access is read-only. The access token is held in app memory.")
+        )
     }
 }
 
@@ -1215,42 +1242,81 @@ private fun SettingsPage(
     onThemeToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val deviceLocale = java.util.Locale.getDefault()
+    val deviceLanguage = deviceLocale.getDisplayName(deviceLocale).ifBlank { deviceLocale.toLanguageTag() }
+    val layoutDirection = if (LocalePolicy.isRightToLeft(deviceLocale.toLanguageTag())) {
+        AtlasText.of("راست‌به‌چپ", "Right-to-left")
+    } else {
+        AtlasText.of("چپ‌به‌راست", "Left-to-right")
+    }
+
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle(AtlasText.of("تنظیمات", "Settings"), AtlasText.of("کنترل تجربه ظاهری و ترجیحات برنامه.", "Control appearance and app preferences."))
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
-        ) {
-            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        PageTitle(
+            AtlasText.of("تنظیمات", "Settings"),
+            AtlasText.of("ظاهر و رفتار برنامه را مدیریت کن.", "Manage the app's appearance and behavior.")
+        )
+        Text(AtlasText.of("ظاهر", "Appearance"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(8.dp))
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(42.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(if (darkThemeEnabled) "☾" else "☀", fontSize = 21.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(AtlasText.of("ظاهر برنامه", "Appearance"), fontWeight = FontWeight.SemiBold)
+                    Text(AtlasText.of("حالت رنگی", "Color theme"), fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (darkThemeEnabled) AtlasText.of("حالت تاریک فعال است", "Dark mode is active") else AtlasText.of("حالت روشن فعال است", "Light mode is active"),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
+                        if (darkThemeEnabled) AtlasText.of("حالت تاریک فعال است", "Dark mode is active")
+                        else AtlasText.of("حالت روشن فعال است", "Light mode is active"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp
                     )
                 }
-                Text(if (darkThemeEnabled) AtlasText.of("تاریک", "Dark") else AtlasText.of("روشن", "Light"), color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                TextButton(onClick = onThemeToggle) {
+                    Text(if (darkThemeEnabled) AtlasText.of("روشن", "Light") else AtlasText.of("تاریک", "Dark"))
+                }
             }
-        }
-        Spacer(Modifier.height(10.dp))
-        Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) {
-            Text(if (darkThemeEnabled) AtlasText.of("فعال‌کردن حالت روشن", "Enable light mode") else AtlasText.of("فعال‌کردن حالت تاریک", "Enable dark mode"))
         }
         Spacer(Modifier.height(18.dp))
         Text(AtlasText.of("زبان و منطقه", "Language & region"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("زبان رابط", "Interface language"), AtlasText.of("فارسی در نسخه فعلی فعال است. ترجمه کامل انگلیسی و دری پیش از انتشار اضافه و آزمایش می‌شود.", "The interface follows your device language. Full English and Dari localization is being completed and tested before release."))
-        Spacer(Modifier.height(12.dp))
-        Text(AtlasText.of("تجربه و دسترس‌پذیری", "Experience & accessibility"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        InfoCard(
+            AtlasText.of("زبان دستگاه", "Device language"),
+            AtlasText.of("زبان شناسایی‌شده: $deviceLanguage. زبان رابط به‌صورت خودکار از تنظیمات دستگاه پیروی می‌کند.", "Detected language: $deviceLanguage. The interface automatically follows your device language.")
+        )
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("دسترس‌پذیری", "Accessibility"), AtlasText.of("بهینه‌سازی صفحه‌خوان، اندازه متن و کنتراست در مرحله کنترل کیفیت قرار دارد.", "Screen reader, text sizing, and contrast improvements are part of quality assurance."))
+        InfoCard(
+            AtlasText.of("جهت نوشتار", "Text direction"),
+            AtlasText.of("چیدمان فعلی: $layoutDirection.", "Current layout: $layoutDirection.")
+        )
+        Spacer(Modifier.height(18.dp))
+        Text(AtlasText.of("حریم خصوصی و داده‌ها", "Privacy & data"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("اعلان‌ها", "Notifications"), AtlasText.of("اعلان‌های حساب و همگام‌سازی پس از راه‌اندازی سرویس حساب فعال می‌شوند.", "Account and sync notifications will be enabled after the account service is implemented."))
+        InfoCard(
+            AtlasText.of("ذخیره‌سازی گفتگوها", "Conversation storage"),
+            AtlasText.of("گفتگوها در حافظه خصوصی برنامه روی همین دستگاه ذخیره می‌شوند؛ همگام‌سازی ابری فعال نیست.", "Conversations are stored in the app's private storage on this device; cloud sync is not active.")
+        )
         Spacer(Modifier.height(8.dp))
-        InfoCard(AtlasText.of("ذخیره‌سازی", "Storage"), AtlasText.of("گفتگوها فعلاً فقط در فضای خصوصی همین دستگاه ذخیره می‌شوند.", "Conversations are currently stored only in this device's private app storage."))
+        InfoCard(
+            AtlasText.of("کلیدهای سرویس‌ها", "Service credentials"),
+            AtlasText.of("کلیدهای هوش مصنوعی نباید داخل برنامه یا فایل APK قرار بگیرند؛ اتصال سرور هنوز فعال نشده است.", "AI provider keys must never be embedded in the app or APK; the server connection is not active yet.")
+        )
+        Spacer(Modifier.height(18.dp))
+        Text(AtlasText.of("دسترس‌پذیری", "Accessibility"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(8.dp))
+        InfoCard(
+            AtlasText.of("خوانایی و صفحه‌خوان", "Readability & screen readers"),
+            AtlasText.of("بررسی کامل اندازه متن، کنتراست و TalkBack هنوز بخشی از آزمون نهایی انتشار است.", "Full text-size, contrast, and TalkBack review is still part of release testing.")
+        )
+        Spacer(Modifier.height(8.dp))
+        InfoCard(
+            AtlasText.of("اعلان‌ها", "Notifications"),
+            AtlasText.of("اعلان‌ها تا زمان پیاده‌سازی حساب و همگام‌سازی ابری فعال نیستند.", "Notifications are not enabled until account and cloud-sync features are implemented.")
+        )
     }
 }
 
