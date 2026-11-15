@@ -55,9 +55,9 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                 val encoded = conversation.toJson()
                 if (existing >= 0) {
                     val old = items.getJSONObject(existing)
-                    val oldMessages = old.optJSONArray(KEY_MESSAGES) ?: JSONArray()
-                    encoded.put(KEY_MESSAGES, oldMessages)
-                    encoded.put("messageCount", oldMessages.length())
+                    val retainedMessages = trimMessages(old.optJSONArray(KEY_MESSAGES) ?: JSONArray())
+                    encoded.put(KEY_MESSAGES, retainedMessages)
+                    encoded.put("messageCount", retainedMessages.length())
                     encoded.put(
                         "updatedAtEpochMillis",
                         maxOf(old.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis)
