@@ -84,7 +84,7 @@ object ChatStorage {
         return runCatching {
             val array = JSONArray(raw)
             buildList {
-                for (index in 0 until minOf(array.length(), MAX_CONVERSATIONS)) {
+                for (index in 0 until array.length()) {
                     val item = array.optJSONObject(index) ?: continue
                     val id = item.optString("id").takeIf { it.isNotBlank() } ?: continue
                     add(
@@ -97,7 +97,7 @@ object ChatStorage {
                         )
                     )
                 }
-            }.sortedByDescending { it.updatedAtEpochMillis }
+            }.sortedByDescending { it.updatedAtEpochMillis }.take(MAX_CONVERSATIONS)
         }.getOrNull()
     }
 
