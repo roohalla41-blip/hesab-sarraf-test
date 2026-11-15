@@ -1,86 +1,88 @@
 # ATLAS AI — Google Play release checklist
 
-**Current release state:** Not ready for production submission.
+**Current release state: NOT READY for production submission.**
 
 ## 1. Android build requirements
-- [x] Package ID is set to com.hooshmasnooi.app.
-- [x] Adaptive launcher icon and monochrome icon are present.
+- [x] Package ID is `com.hooshmasnooi.app`.
+- [x] Adaptive launcher and monochrome icons are present.
 - [x] Cleartext network traffic is disabled.
-- [x] CI validates Android tests and package assembly.
-- [x] Target API updated to Android 16 / API 36 for new-app submission policy.
-- [ ] Re-run the full build after the API 36 toolchain upgrade and latest UI/release-signing changes.
+- [x] Main-branch GitHub Actions workflow runs Android unit tests and assembles a debug package on pushes.
+- [x] Target API is Android 16 / API 36.
+- [ ] Run and review the latest CI result and resolve any failures.
 - [ ] Test on physical Android devices across supported screen sizes and Android versions.
 - [ ] Complete release build configuration, code shrinking review, and crash-free startup checks.
-- [ ] Increment versionCode for the first release and every subsequent update.
+- [ ] Increment versionCode for the first public release and every later update.
 
-Google Play requires new apps and app updates submitted from 31 August 2026 to target Android 16 / API 36 or higher. Re-check the official policy immediately before submission:
+Re-check the current Google Play target API policy immediately before submission:
 https://support.google.com/googleplay/android-developer/answer/11926878
 
 ## 2. Signing and Android App Bundle
-- [ ] Create and securely back up a dedicated upload keystore outside the Git repository.
-- [x] Add a manual signed-AAB validation workflow that reads signing material only from protected GitHub Actions secrets and does not publish artifacts.
-- [ ] Create a dedicated upload keystore and add these repository secrets: `ATLAS_UPLOAD_KEYSTORE_BASE64`, `ATLAS_UPLOAD_STORE_PASSWORD`, `ATLAS_UPLOAD_KEY_ALIAS`, and `ATLAS_UPLOAD_KEY_PASSWORD`.
-- [ ] Run the signed-AAB validation workflow after the secrets are configured; never commit the keystore or passwords.
-- [ ] Generate a signed Android App Bundle (.aab), not a debug APK.
+- [ ] User supplies or creates a dedicated upload keystore and securely backs it up outside Git.
+- [x] Manual signed-AAB validation workflow reads signing material only from protected GitHub Actions secrets and does not publish.
+- [ ] Configure repository secrets: `ATLAS_UPLOAD_KEYSTORE_BASE64`, `ATLAS_UPLOAD_STORE_PASSWORD`, `ATLAS_UPLOAD_KEY_ALIAS`, and `ATLAS_UPLOAD_KEY_PASSWORD`.
+- [ ] Run signed-AAB validation after the signing secrets are configured.
+- [ ] Generate and verify a signed Android App Bundle (.aab).
 - [ ] Enroll in Play App Signing and register the upload certificate.
-- [ ] Add the correct release/upload certificate SHA-1 to the Google OAuth Android client if Gmail remains in the release.
-- [ ] Verify the uploaded bundle and Play-generated APKs through Play Console.
+- [ ] Add the release/upload certificate SHA-1 to the Google OAuth Android client if Gmail remains in the release.
+- [ ] Verify the uploaded bundle and Play-generated APKs in Play Console.
 
-New Play apps use Android App Bundles and Play App Signing:
+Google Play App Bundle and Play App Signing references:
 https://developer.android.com/guide/app-bundle/faq
 https://support.google.com/googleplay/android-developer/answer/9842756
 
-## 3. Developer account and package identity
-- [ ] Complete Google Play developer identity verification.
-- [ ] Register the package name com.hooshmasnooi.app in Play Console if required for the developer account.
-- [ ] Confirm the developer account type and whether the new-personal-account closed-testing rule applies.
-
-Google's package registration policy states that all Play packages must be registered from 30 September 2026:
-https://support.google.com/googleplay/android-developer/answer/16984799
-
-## 4. App functionality and security
-- [ ] Connect the Android chat UI to the authenticated ATLAS Edge Function.
-- [ ] Confirm the independent ATLAS Supabase project and user sign-in method; do not use the protected Sarraf database.
-- [ ] Configure provider secrets only in the server Secret Manager and test Z.AI/Cloudflare fallback with cost controls.
-- [ ] Add atomic quotas, abuse controls, monitoring, and provider-failure tests.
-- [ ] Replace the current SharedPreferences conversation store with a transactional local database.
-- [ ] Verify Gmail OAuth and read-only inbox retrieval on physical devices.
-- [ ] Complete account/data export and deletion behavior if accounts or cloud sync are enabled.
+## 3. Backend, AI, and data security
+- [x] Android and browser clients are wired to the deployed `atlas-chat` Edge Function.
+- [x] Provider credentials are read server-side, not embedded in client source.
+- [ ] Confirm that Supabase project `wwlyvojtsrklcpqsloqz` is the intended ATLAS-only backend. Its public schema currently contains 59 exchange-office, wallet, payment, and user-related tables; reported row counts were zero at inspection. Do not add or modify database resources until the project/data boundary is confirmed.
+- [ ] Confirm server-side provider Secret names and model configuration, then verify a real successful model response.
+- [ ] Select and implement user authentication; the current Edge Function accepts requests without a user JWT.
+- [ ] Replace ephemeral IP throttling with durable per-user quotas, atomic usage accounting, abuse protection, and monitoring.
+- [ ] Decide whether cloud chat history is required; if so, implement it only in a confirmed isolated ATLAS data boundary.
+- [ ] Complete data export/deletion and account lifecycle behavior if accounts or cloud sync are enabled.
 - [ ] Complete privacy, permission, accessibility, and data-flow review.
 
+## 4. Integrations and functionality
+- [ ] Verify Gmail read-only OAuth and inbox retrieval on physical Android devices.
+- [ ] Complete Google OAuth verification and restricted-scope review if public Gmail access remains enabled.
+- [ ] Implement file/document, image, voice, web research, and coding tools before advertising them as live capabilities.
+- [ ] Ensure every inactive tool is labelled accurately in the app and store listing.
+
 ## 5. Privacy and policy
-- [ ] Review and finalize the Persian and English privacy policy drafts.
+- [ ] Review and finalize Persian/Dari and English privacy policy.
 - [ ] Publish the privacy policy at a public HTTPS URL.
 - [ ] Provide a working support contact and developer identity.
 - [ ] Complete the Play Console Data safety form based on the actual release build and data flows.
 - [ ] Complete app access instructions, content rating, target audience, ads declaration, and any required policy declarations.
-- [ ] Complete Google OAuth verification and restricted-scope review if Gmail access remains enabled for public users.
 
 ## 6. Store listing
 - [ ] Finalize app title and short description.
-- [ ] Write the full store description in Persian and English.
-- [ ] Prepare phone screenshots for the real, working release build.
+- [ ] Write full store description in Persian/Dari and English.
+- [ ] Prepare phone screenshots from the real working release build.
 - [ ] Prepare the 512×512 app icon and 1024×500 feature graphic.
 - [ ] Provide support website/email and privacy policy URL.
-- [ ] Ensure screenshots and listing claims do not advertise features that are still inactive.
+- [ ] Do not advertise features that remain inactive.
 
 ## 7. Testing tracks and production
-- [ ] Upload the signed AAB to Internal testing first.
-- [ ] Install from Google Play testing track and verify Gmail, chat, permissions, offline behavior, and upgrades.
+- [ ] Upload signed AAB to Internal testing.
+- [ ] Install from Google Play testing track and verify chat, Gmail (if included), permissions, offline behavior, and upgrades.
 - [ ] Run Closed testing and collect documented feedback.
-- [ ] If the developer account is a personal account created after 13 November 2023, keep at least 12 testers opted in continuously for 14 days before applying for production access.
-- [ ] Apply for production access if required, answer Play Console testing questions, then request production rollout.
+- [ ] If the developer account is a personal account created after 13 November 2023, confirm whether the 12-testers/14-days closed-testing requirement applies.
+- [ ] Apply for production access if required, then request production rollout.
 - [ ] Monitor crashes, ANRs, policy messages, and user feedback after launch.
 
-Official personal-account testing requirement:
+Official testing requirement:
 https://support.google.com/googleplay/android-developer/answer/14151465
 
-## 8. Current blockers
-1. General AI is not live; the provider fallback function and Android adapter are source-only and not connected to a real authenticated project.
-2. Gmail has not been tested on a physical device.
-3. Local conversation storage is not yet on a transactional database.
-4. Release signing and AAB pipeline are not configured.
-5. Privacy policy and store listing are drafts, not published.
-6. API 36 build upgrade must pass CI and device testing.
+## 8. Release blockers
+1. Supabase database identity/data boundary requires confirmation before adding authentication, quotas, or persistent user data.
+2. Provider Secret configuration and a successful live model response are not verified.
+3. The current public chat endpoint does not require user JWT and uses non-durable in-memory limits.
+4. Gmail OAuth has not been verified on a physical device.
+5. Local chat storage is SharedPreferences, not a transactional database.
+6. File, image, voice, web, and other advanced tools are not live.
+7. Physical-device, accessibility, localization, and security review remain incomplete.
+8. Privacy policy, support contact, and store listing need finalization.
+9. Release signing key is not configured; the user's release key will be provided later.
+10. Signed AAB and Google Play track validation remain outstanding.
 
-A successful debug build is not proof of production readiness. Production is permitted only after the blockers above are resolved and the final AAB has been tested through Play Console.
+A successful debug build is not proof of production readiness. Production is permitted only after the blockers above have evidence and the final signed AAB has been validated through Google Play.
