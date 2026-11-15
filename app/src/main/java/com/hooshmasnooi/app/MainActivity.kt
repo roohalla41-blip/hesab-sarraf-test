@@ -494,7 +494,7 @@ private fun AtlasApp(
                             }
                             Spacer(Modifier.height(15.dp))
                             Text(AtlasText.of("دستیار هوشمند چندسرویس", "Multi-service AI assistant"), color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold)
-                            Text(AtlasText.of("فضای هوشمند اطلس", "Early access • In development"), color = Color(0xFF9FB4CC), fontSize = 11.sp)
+                            Text(AtlasText.of("فضای هوشمند اطلس", "Your intelligent workspace"), color = Color(0xFF9FB4CC), fontSize = 11.sp)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -532,7 +532,7 @@ private fun AtlasApp(
                         Column(Modifier.padding(13.dp)) {
                             Text(AtlasText.of("وضعیت نسخه", "Build status"), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                             Spacer(Modifier.height(4.dp))
-                            Text(AtlasText.of("موتور گفت‌وگو متصل است • ابزارهای دیگر به سرویس جداگانه نیاز دارند.", "Version 0.1.0 • Features are being completed."), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(AtlasText.of("مسیر گفت‌وگوی آنلاین متصل است • ابزارهای دیگر نیازمند سرویس اختصاصی هستند.", "Online chat route is connected • other tools require dedicated services."), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
                 }
@@ -965,7 +965,7 @@ private fun IntegrationsPage(
                 Text(
                     AtlasText.of(
                         "درخواست‌های گفت‌وگو به تابع امن atlas-chat ارسال می‌شوند. پاسخ نهایی به تنظیمات معتبر ارائه‌دهنده هوش مصنوعی در سمت سرور وابسته است.",
-                        "Server-side provider fallback is prepared. General chat stays disabled until the independent project, user sign-in, and live tests are completed."
+                        "Chat requests are routed to the deployed ATLAS endpoint. A successful model response still depends on valid server-side provider settings."
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1031,7 +1031,7 @@ private fun IntegrationsPage(
             "GitHub" to AtlasText.of("مخزن‌ها و ابزارهای توسعه • اتصال در مرحله بعد", "Repositories and developer tools • planned"),
             "Google Drive" to AtlasText.of("فایل‌ها و اسناد • اتصال در مرحله بعد", "Files and documents • planned"),
             "Google Calendar" to AtlasText.of("رویدادها و برنامه‌ریزی • اتصال در مرحله بعد", "Events and scheduling • planned"),
-            "Supabase" to AtlasText.of("زیرساخت داده و حساب • هنوز متصل نشده", "Data and account infrastructure • not connected")
+            "Supabase" to AtlasText.of("زیرساخت داده و حساب • هنوز متصل نشده", "Account database • not configured")
         ).forEach { item ->
             InfoCard(item.first, item.second)
             Spacer(Modifier.height(8.dp))
@@ -1188,7 +1188,7 @@ private fun FeaturePage(
             InfoCard(feature.first, feature.second)
             Spacer(Modifier.height(10.dp))
         }
-        Text(AtlasText.of("قابلیت‌های این بخش به‌تدریج و پس از اتصال سرویس‌های مربوطه فعال می‌شوند.", "This section is a structure preview; its functionality is not active yet."),
+        Text(AtlasText.of("قابلیت‌های این بخش به‌تدریج و پس از اتصال سرویس‌های مربوطه فعال می‌شوند.", "These capabilities become available when their dedicated services are connected."),
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -1242,7 +1242,7 @@ private fun ProfilePage(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(8.dp))
         InfoCard(
             AtlasText.of("اطلاعات نمایه", "Profile information"),
-            AtlasText.of("نام، تصویر و اطلاعات شخصی قابل ویرایش نیستند؛ این نسخه حساب واقعی ایجاد نمی‌کند.", "Name, photo, and personal details are not editable; this version does not create a real account.")
+            AtlasText.of("نمایه مهمان فعال است؛ ورود و حساب آنلاین هنوز راه‌اندازی نشده‌اند.", "Guest profile is active; online sign-in and accounts are not set up yet.")
         )
         Spacer(Modifier.height(8.dp))
         InfoCard(
@@ -1260,13 +1260,13 @@ private fun ProfilePage(modifier: Modifier = Modifier) {
 @Composable
 private fun PlansPage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle(AtlasText.of("طرح‌های اشتراک", "Plans"), AtlasText.of("طرح‌های اشتراک در حال نهایی‌شدن هستند؛ قیمت و پرداخت هنوز تعریف نشده است.", "Plans are previews; pricing and payments are not configured."))
+        PageTitle(AtlasText.of("طرح‌های اشتراک", "Plans"), AtlasText.of("اشتراک و پرداخت آنلاین هنوز فعال نشده‌اند.", "Subscriptions and online payments are not enabled yet."))
         listOf(
             AtlasText.of("رایگان", "Free") to AtlasText.of("گفت‌وگوی پایه و سهمیه محدود پس از اتصال", "Basic chat and limited quota after connection"),
             AtlasText.of("پلاس", "Plus") to AtlasText.of("سهمیه بیشتر و مدل‌های پیشرفته‌تر", "Higher quota and advanced models"),
             AtlasText.of("پرو", "Pro") to AtlasText.of("سقف مصرف بالاتر و ابزارهای تخصصی", "Higher usage limits and specialized tools")
         ).forEach { plan ->
-            InfoCard(plan.first, plan.second + AtlasText.of(" • هنوز فعال نیست", " • Not active yet"))
+            InfoCard(plan.first, plan.second + AtlasText.of(" • نیازمند راه‌اندازی", " • Setup required"))
             Spacer(Modifier.height(10.dp))
         }
         Text(AtlasText.of("هیچ پرداختی انجام نمی‌شود و درگاه پرداخت متصل نیست.", "No payment is processed and no payment provider is connected."),
@@ -1341,7 +1341,7 @@ private fun SettingsPage(
         Spacer(Modifier.height(8.dp))
         InfoCard(
             AtlasText.of("کلیدهای سرویس‌ها", "Service credentials"),
-            AtlasText.of("کلیدهای هوش مصنوعی فقط در سمت سرور نگهداری می‌شوند و داخل برنامه یا فایل APK قرار نمی‌گیرند.", "AI provider keys must never be embedded in the app or APK; the server connection is not active yet.")
+            AtlasText.of("کلیدهای هوش مصنوعی فقط در سمت سرور نگهداری می‌شوند؛ پاسخ مدل به تنظیمات امن ارائه‌دهندگان وابسته است.", "AI provider keys stay server-side; model responses depend on valid provider configuration.")
         )
         Spacer(Modifier.height(18.dp))
         Text(AtlasText.of("دسترس‌پذیری", "Accessibility"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
@@ -1365,7 +1365,7 @@ private fun HelpPage(modifier: Modifier = Modifier) {
         InfoCard(AtlasText.of("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "Does ATLAS provide AI answers?"), AtlasText.of("بله؛ گفت‌وگوی عمومی درخواست‌ها را به موتور آنلاین اطلس می‌فرستد.", "Yes; general chat sends requests to the ATLAS online engine."))
         InfoCard(AtlasText.of("آیا برای دیدن ساختار کلید لازم است؟", "Do I need a key to view the app structure?"), AtlasText.of("خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.", "No; the UI and screens work without API keys."))
         InfoCard(AtlasText.of("آیا داده‌ها ذخیره می‌شوند؟", "Is my data stored?"), AtlasText.of("پیام‌های گفت‌وگو به‌صورت محلی و خصوصی روی همین دستگاه ذخیره می‌شوند.", "Chat messages are stored locally in the private app storage on this device."))
-        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("اطلاعات پشتیبانی رسمی در حال تکمیل است.", "Official support information is being completed."))
+        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("راه ارتباطی پشتیبانی رسمی پیش از انتشار ثبت خواهد شد.", "Official support contact details must be added before release."))
     }
 }
 
