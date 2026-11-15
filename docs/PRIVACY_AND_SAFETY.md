@@ -10,14 +10,14 @@
 7. Treat uploaded files as private user data; validate and restrict access.
 
 ## Current local history behavior
-- Conversation history is stored as JSON in a file under Android private internal app storage.
+- Conversation history is serialized as JSON, then encrypted into a binary file under Android private internal app storage.
 - The current implementation is device-local and does not sync to Supabase or another cloud service.
 - New history writes are encrypted with AES-256-GCM. The non-exportable 256-bit key is generated and stored by Android Keystore; the key is not embedded in the APK or written beside the history file.
 - Users should not put passwords, API keys, or other secrets into chat messages.
 - Retention is bounded to the newest 40 conversations and 300 messages per conversation.
 - Users can delete one conversation from History after confirmation.
 - Users can clear all conversations from History or the Privacy and Security screen after a separate confirmation. This operation also attempts to remove the damaged-history recovery copy.
-- The Privacy and Security screen displays the local conversation count and explicitly states that application-level encryption, online sign-in, and AI service connection are not yet active.
+- The Privacy and Security screen displays the local conversation count and explains that local history is encrypted, while online sign-in and AI service connection are not yet active.
 - There is no in-app export control.
 - Clearing app data or uninstalling the app also removes the local history file.
 - Legacy JSON migration verifies the encrypted copy by decrypting it and comparing the original bytes before deleting the plaintext file. Malformed legacy JSON is preserved as an encrypted recovery file before an empty encrypted history is initialized. A pre-existing legacy `.corrupt` recovery file is also encrypted before its plaintext copy is removed. Clear-all removes encrypted recovery files after writing an empty encrypted history.
@@ -26,11 +26,10 @@
 
 ## Local encryption decision
 - Do not silently encrypt or rename the existing history file in-place. The implemented migration writes a separate encrypted file, verifies it, and only then removes the legacy plaintext file.
-- Before enabling encryption, implement and test a versioned migration that preserves existing plaintext history until the encrypted copy has been fully written and verified.
 - Android Keystore now protects a randomly generated AES-256-GCM key; the key is non-exportable and is not hard-coded.
 - The encrypted file includes a format marker/version and nonce; AES-GCM authentication rejects modified ciphertext. Missing keys fail closed rather than generating a replacement key.
-- Define recovery behavior for missing/invalid Keystore keys, app restore, device transfer, and interrupted migration.
-- Keep a recoverable backup until verification succeeds; then apply a documented cleanup policy.
+- Recovery from missing/invalid Keystore keys, app restore, and device transfer remains a release-planning item. Interrupted migration is retryable because plaintext is retained until encrypted verification succeeds.
+- The migration retains damaged legacy data as an encrypted recovery file; clear-all removes that recovery file after committing an empty encrypted history.
 - Recovery from a missing, invalidated, or hardware-reset Keystore key remains a documented limitation; the app must not silently reset encrypted history. This implementation still requires physical-device testing.
 
 ## Account and session principles
