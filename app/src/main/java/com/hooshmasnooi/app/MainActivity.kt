@@ -89,7 +89,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.LayoutDirection
@@ -1210,6 +1212,7 @@ private fun EmptyCard(title: String, description: String) {
 
 @Composable
 private fun MessageBubble(message: ChatMessage) {
+    val clipboardManager = LocalClipboardManager.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (message.fromUser) Arrangement.Start else Arrangement.End
@@ -1241,6 +1244,12 @@ private fun MessageBubble(message: ChatMessage) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+            }
+            TextButton(
+                onClick = { clipboardManager.setText(AnnotatedString(message.text)) },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+            ) {
+                Text("کپی متن", fontSize = 10.sp)
             }
         }
     }
