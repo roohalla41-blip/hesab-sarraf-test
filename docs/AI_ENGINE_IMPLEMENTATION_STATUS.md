@@ -1,44 +1,38 @@
 # ATLAS AI — AI Engine Implementation Status
 
-This is a repository-only implementation. It does not deploy or configure Supabase or an external provider.
+## Live service connection
+- Supabase project: `wwlyvojtsrklcpqsloqz` (the independent ATLAS project).
+- Deployed function: `atlas-chat`, active deployment version 9.
+- Android chat now calls `/functions/v1/atlas-chat` through `SupabaseChatGateway`.
+- The browser client in `preview/app.js` calls the same live function.
+- The Android client sends the project's public publishable key in the `apikey` header. No AI provider secret is embedded in the APK or browser code.
+- The function currently permits the published GitHub Pages origin and native Android requests without an Origin header.
+- The function keeps its public endpoint mode (`verify_jwt = false`) and applies per-IP request limits in Edge isolate memory. These limits are best-effort and are not a durable quota system.
 
-## Implemented in this repository
-- Provider-neutral Android gateway boundary with explicit failure states.
-- Supabase Edge Function source for the protected chat endpoint; JWT verification remains enabled.
-- Server-side provider routing and fallback order: Z.AI, Cloudflare Workers AI, and a generic OpenAI-compatible provider.
-- Provider credentials are read only from server environment variables; no provider secret is embedded in Android or committed to the repository.
-- Validation for supported modes, message roles, per-message size, total context size, and final user turn.
-- Request correlation IDs, bounded per-provider timeout, HTTPS-only provider endpoint configuration, and stable user-safe error codes.
-- Optional exact-origin allowlist through ATLAS_ALLOWED_ORIGINS; native requests without an Origin header are supported.
-- Provider response parsing with optional token usage metadata.
-- GitHub Actions now type-checks the Edge Function with Deno and runs Android unit tests plus debug package validation.
+## Provider configuration
+The function tries configured providers in this order:
+1. Generic OpenAI-compatible endpoint: `AI_API_KEY`, `AI_API_URL`, and `AI_MODEL`.
+2. Groq: `GROQ_API_KEY`, optional `GROQ_API_URL`, and optional `GROQ_MODEL`.
+3. Z.AI: `ZAI_API_KEY`, `ZAI_MODEL`, and optional `ZAI_API_URL`.
+4. Cloudflare Workers AI: `ATLAS_CLOUDFLARE` or `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `CLOUDFLARE_MODEL`.
 
-## Provider environment configuration
-- Z.AI: ZAI_API_KEY and ZAI_MODEL are both required; optional ZAI_API_URL defaults to the standard chat-completions endpoint. No paid model is selected implicitly.
-- Cloudflare Workers AI: CLOUDFLARE_API_TOKEN or ATLAS_CLOUDFLARE, plus CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_MODEL.
-- Generic OpenAI-compatible provider: AI_API_KEY, AI_MODEL, and optional AI_API_URL (base URL; defaults to the OpenAI v1 base).
-- AI_PROVIDER_ORDER optionally selects the fallback order, for example zai,cloudflare,openai.
-- All values must be configured in the Supabase Function Secret Manager only. Do not put them in GitHub source, Android BuildConfig, or the APK.
+All provider values must be stored in the Supabase Edge Function Secret Manager. Never place them in Android source, browser JavaScript, GitHub, or the APK. A provider is usable only when its required secret and model configuration exist.
 
-## Not implemented
-- No provider secrets have been deployed or tested against a live model.
-- An authenticated Android HTTP adapter exists and validates request bounds, but it is not wired into the UI because no approved account session or project configuration is available.
-- No Supabase project has been linked or deployed from this repository.
-- No account authentication flow is implemented in Android; the function's JWT requirement therefore prevents unauthenticated app calls.
-- No streaming/SSE or Android cancellation propagation.
-- No atomic per-account quota, per-IP rate limiting, abuse controls, moderation pipeline, or usage ledger.
-- No cloud conversation persistence or account lifecycle.
-- No file, image, audio, web, or coding tool execution.
-- No production monitoring or live integration tests.
+## Implemented
+- Android sends general chat requests to the deployed ATLAS endpoint and replaces the pending response with the model answer or a specific connection error.
+- Browser chat sends requests to the same endpoint and renders assistant replies and service errors.
+- Conversation context is passed with bounded message count and length.
+- Server-side provider fallback, bounded upstream timeout, safe error messages, request limits, and no-store responses.
+- Gmail remains a separate read-only Android integration.
 
-## Security and rollout gates
-1. Confirm the independent ATLAS Supabase project and exact deployment target. Do not use the protected Sarraf database.
-2. Decide the account sign-in method and verify JWT claims and ownership rules.
-3. Configure provider secrets only in the server Secret Manager; never request or commit secret values.
-4. Review provider order, model availability, account permissions, and billing/credits.
-5. Add an atomic quota/rate-limit store before public rollout; in-memory counters are not sufficient in serverless environments.
-6. Set ATLAS_ALLOWED_ORIGINS to exact trusted web origins before browser access.
-7. Add Android adapter and end-to-end integration tests, then explicitly authorize deployment. This source change does not deploy anything.
+## Remaining before broad public release
+- No Android build, emulator test, or physical-device test was run for this change, as requested.
+- No live model request was made to verify which provider secret is currently populated.
+- User accounts, verified JWTs, durable per-user quotas, persistent cloud conversation storage, and abuse-resistant rate limiting are not implemented.
+- Edge-isolate in-memory limits can reset and are not sufficient as the only control for a large public launch.
+- Gmail OAuth consent, production verification, and real-device validation remain separate release requirements.
+- File, image, audio, web search, and side-effecting integrations are not implemented as live tools.
+- The browser history is session-only; Android history is local to the device.
 
-## Current status
-The provider fallback source is implemented and is included in static type-checking, but the AI engine is not connected to Android or a live Supabase project. The app must not be described as a functioning general AI assistant until authentication, secrets, deployment, and real-device tests are complete.
+## Release notes
+The AI chat path is now connected in source and the Supabase Edge Function has been deployed. This does not mean every ATLAS feature is complete or that a signed Android release has been produced. No database schema, Auth configuration, RLS policy, or user record was changed as part of this connection.
