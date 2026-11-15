@@ -735,39 +735,70 @@ private fun IntegrationsPage(
     modifier: Modifier = Modifier
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("اتصال برنامه‌ها", "اتصال واقعی Gmail با مجوز فقط‌خواندنی در این نسخه آماده آزمایش است.")
-        Card(
+        PageTitle("مرکز اتصال سرویس‌ها", "مدیریت یکپارچه دسترسی‌ها و ارتباط اطلس با برنامه‌های دیگر.")
+        Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            color = Color(0xFF172B3D)
         ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFF294B59), modifier = Modifier.size(46.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Filled.Hub, contentDescription = null, tint = Color(0xFF83E2D2), modifier = Modifier.size(25.dp))
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("اتصال‌های حساب", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("دسترسی‌ها فقط با اجازه شما فعال می‌شوند.", color = Color(0xFFB5C6D8), fontSize = 11.sp)
+                }
+                Text("۰۱ فعال", color = Color(0xFF83E2D2), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text("سرویس‌های متصل", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(9.dp))
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Gmail", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
-                    Text(if (gmailMessages.isNotEmpty()) "داده دریافت شد" else "اتصال آزمایشی",
-                        color = MaterialTheme.colorScheme.tertiary, style = MaterialTheme.typography.labelSmall)
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFFFE8E5), modifier = Modifier.size(42.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("G", color = Color(0xFFB33A2B), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Spacer(Modifier.width(11.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Google Gmail", fontWeight = FontWeight.Bold)
+                        Text("خواندن ایمیل‌ها • مجوز فقط‌خواندنی", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    }
+                    Surface(shape = RoundedCornerShape(20.dp), color = if (gmailMessages.isNotEmpty()) Color(0xFFDDF5E9) else Color(0xFFFFF0D8)) {
+                        Text(if (gmailMessages.isNotEmpty()) "دریافت موفق" else "نیازمند اتصال",
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                            color = if (gmailMessages.isNotEmpty()) Color(0xFF176B45) else Color(0xFF8A5B14),
+                            fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
-                Spacer(Modifier.height(8.dp))
-                Text("اطلس می‌تواند ۸ ایمیل اخیر صندوق ورودی را بخواند و موضوع، فرستنده و خلاصه اولیه آن‌ها را نمایش دهد.",
+                Spacer(Modifier.height(14.dp))
+                Text("اطلس می‌تواند ۸ ایمیل اخیر صندوق ورودی را دریافت کند و فرستنده، موضوع و خلاصه اولیه را نمایش دهد.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 Text(gmailStatus, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = onConnectGmail, modifier = Modifier.fillMaxWidth()) {
-                    Text("اتصال حساب Gmail با Google")
+                    Text("اتصال امن حساب Google")
                 }
-                Button(onClick = onRefreshGmail, enabled = !gmailLoading && gmailMessages.isNotEmpty(),
+                OutlinedButton(onClick = onRefreshGmail, enabled = !gmailLoading && gmailMessages.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth()) {
-                    Text(if (gmailLoading) "در حال دریافت..." else "دریافت دوباره ایمیل‌ها")
+                    Text(if (gmailLoading) "در حال دریافت..." else "همگام‌سازی دوباره")
                 }
                 TextButton(onClick = onDisconnectGmail, modifier = Modifier.fillMaxWidth()) {
-                    Text("پاک‌کردن اتصال از این نشست")
+                    Text("قطع دسترسی در این نشست")
                 }
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Text("ایمیل‌های اخیر", fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(18.dp))
+        Text("فعالیت اخیر Gmail", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(9.dp))
         if (gmailMessages.isEmpty()) {
             EmptyCard("هنوز ایمیلی دریافت نشده", "پس از اتصال Google و تأیید مجوز، ایمیل‌های اخیر اینجا نمایش داده می‌شوند.")
         } else {
@@ -776,8 +807,19 @@ private fun IntegrationsPage(
                 Spacer(Modifier.height(8.dp))
             }
         }
-        InfoCard("مجوز و حریم خصوصی", "فقط gmail.readonly درخواست می‌شود. اطلس نمی‌تواند ایمیل ارسال یا حذف کند. توکن دسترسی فقط در حافظه همین اجرای برنامه است و در GitHub یا دیتابیس ذخیره نمی‌شود. برای لغو کامل، مجوز ATLAS AI را از حساب Google حذف کن.")
-        InfoCard("سایر سرویس‌ها", "GitHub، Google Drive، Supabase و Calendar در مرحله بعدی اتصال واقعی می‌شوند.")
+        Spacer(Modifier.height(10.dp))
+        Text("سرویس‌های قابل توسعه", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(9.dp))
+        listOf(
+            "GitHub" to "مخزن‌ها و ابزارهای توسعه • اتصال در مرحله بعد",
+            "Google Drive" to "فایل‌ها و اسناد • اتصال در مرحله بعد",
+            "Google Calendar" to "رویدادها و برنامه‌ریزی • اتصال در مرحله بعد",
+            "Supabase" to "زیرساخت داده و حساب • هنوز متصل نشده"
+        ).forEach { item ->
+            InfoCard(item.first, item.second)
+            Spacer(Modifier.height(8.dp))
+        }
+        InfoCard("حریم خصوصی Gmail", "فقط مجوز gmail.readonly درخواست می‌شود. اطلس نمی‌تواند ایمیل ارسال یا حذف کند. توکن دسترسی فقط در حافظه همین اجرای برنامه است و در GitHub یا دیتابیس ذخیره نمی‌شود. برای لغو کامل، مجوز ATLAS AI را از حساب Google حذف کن.")
     }
 }
 
