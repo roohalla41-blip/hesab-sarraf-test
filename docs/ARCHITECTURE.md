@@ -42,7 +42,3 @@
 - Execute the new automated repository tests and complete Android build validation.
 - Device testing, privacy review, accessibility, complete translations, signed AAB, Play Console policy declarations, and store assets.
 
-
-## Local conversation history security
-
-Conversation history is stored locally as JSON payload encrypted with AES-256-GCM. The 256-bit key is generated and retained in Android Keystore and is not exported by the application. Legacy plaintext JSON is migrated to a separate encrypted file; the old file is removed only after decrypt-and-compare verification. Missing keys or authentication failures stop history loading rather than silently creating an empty history. Android Keystore and file-migration behavior still require physical-device testing.
