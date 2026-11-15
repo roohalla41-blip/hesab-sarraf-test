@@ -130,6 +130,8 @@ class MainActivity : ComponentActivity() {
         private set
     var gmailLoading by mutableStateOf(false)
         private set
+    var gmailConnected by mutableStateOf(false)
+        private set
     private var gmailAccessToken: String? = null
     private var pendingGmailAuthorizationAction: (() -> Unit)? = null
     private var pendingGmailChatResult: ((String) -> Unit)? = null
@@ -169,6 +171,7 @@ class MainActivity : ComponentActivity() {
             )
         }
         gmailAccessToken = token
+        gmailConnected = true
         gmailStatus = "مجوز Gmail با موفقیت دریافت شد."
     }
 
@@ -180,6 +183,8 @@ class MainActivity : ComponentActivity() {
 
     private fun failGmailAuthorization(error: Exception) {
         pendingGmailAuthorizationAction = null
+        gmailConnected = false
+        gmailAccessToken = null
         val detail = error.localizedMessage ?: error.message ?: error.javaClass.simpleName
         gmailStatus = "اتصال Gmail ناموفق بود: $detail"
         pendingGmailChatResult?.invoke(gmailStatus)
@@ -259,6 +264,7 @@ class MainActivity : ComponentActivity() {
 
     fun disconnectGmail() {
         gmailAccessToken = null
+        gmailConnected = false
         gmailMessages = emptyList()
         gmailStatus = "توکن موقت از حافظه برنامه پاک شد. برای لغو کامل مجوز، دسترسی ATLAS AI را از تنظیمات حساب Google حذف کن."
     }
@@ -341,6 +347,7 @@ private fun AtlasApp(
     gmailStatus: String,
     gmailMessages: List<String>,
     gmailLoading: Boolean,
+    gmailConnected: Boolean,
     onConnectGmail: () -> Unit,
     onRefreshGmail: () -> Unit,
     onDisconnectGmail: () -> Unit,
@@ -626,7 +633,7 @@ private fun AtlasApp(
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "integrations" -> IntegrationsPage(
-                    gmailStatus, gmailMessages, gmailLoading,
+                    gmailStatus, gmailMessages, gmailLoading, gmailConnected,
                     onConnectGmail, onRefreshGmail, onDisconnectGmail,
                     Modifier.fillMaxSize().padding(padding)
                 )
@@ -856,6 +863,7 @@ private fun IntegrationsPage(
     gmailStatus: String,
     gmailMessages: List<String>,
     gmailLoading: Boolean,
+    gmailConnected: Boolean,
     onConnectGmail: () -> Unit,
     onRefreshGmail: () -> Unit,
     onDisconnectGmail: () -> Unit,
@@ -899,9 +907,9 @@ private fun IntegrationsPage(
                         Text("خواندن ایمیل‌ها • مجوز فقط‌خواندنی", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                     Surface(shape = RoundedCornerShape(20.dp), color = if (gmailMessages.isNotEmpty()) Color(0xFFDDF5E9) else Color(0xFFFFF0D8)) {
-                        Text(if (gmailMessages.isNotEmpty()) "دریافت موفق" else "نیازمند اتصال",
+                        Text(if (gmailConnected) "متصل" else "نیازمند اتصال",
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                            color = if (gmailMessages.isNotEmpty()) Color(0xFF176B45) else Color(0xFF8A5B14),
+                            color = if (gmailConnected) Color(0xFF176B45) else Color(0xFF8A5B14),
                             fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -912,9 +920,9 @@ private fun IntegrationsPage(
                 Text(gmailStatus, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = onConnectGmail, modifier = Modifier.fillMaxWidth()) {
-                    Text("اتصال امن حساب Google")
+                    Text(if (gmailConnected) "اتصال دوباره / تغییر حساب Google" else "اتصال امن حساب Google")
                 }
-                OutlinedButton(onClick = onRefreshGmail, enabled = !gmailLoading && gmailMessages.isNotEmpty(),
+                OutlinedButton(onClick = onRefreshGmail, enabled = !gmailLoading && gmailConnected,
                     modifier = Modifier.fillMaxWidth()) {
                     Text(if (gmailLoading) "در حال دریافت..." else "همگام‌سازی دوباره")
                 }
