@@ -1,6 +1,17 @@
 # ATLAS AI — Server API Contract (Draft)
 
-This document defines a provider-neutral contract for a future authenticated application backend. It does not deploy or configure a service.
+This document defines the authenticated backend contract. It does not deploy or configure a service.
+
+## Current chat function
+The repository contains a Supabase Edge Function at supabase/functions/chat/index.ts. It:
+- Requires a valid Supabase JWT (verify_jwt remains enabled).
+- Accepts POST requests with mode, optional conversation_id, and a bounded messages array.
+- Validates supported modes, roles, message length, total context size, and that the last message is from the user.
+- Applies an exact-origin allowlist for browser clients; native requests without an Origin header are supported.
+- Routes to configured providers in the server-defined order and falls back when one is unavailable.
+- Returns a user-safe response with request_id, provider, model, and optional token usage.
+
+Supported provider configurations are described in docs/AI_ENGINE_IMPLEMENTATION_STATUS.md.
 
 ## Security requirements
 - The mobile client must never contain AI provider keys, privileged database keys, or service-role credentials.
@@ -12,7 +23,7 @@ This document defines a provider-neutral contract for a future authenticated app
 - File uploads require type/size validation, private storage by default, and short-lived access URLs.
 - User deletion and data export must have explicit, documented server workflows.
 
-## Proposed endpoints
+## Proposed application endpoints
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -28,34 +39,23 @@ This document defines a provider-neutral contract for a future authenticated app
 | PUT | /v1/privacy | Update privacy preferences |
 
 ## Chat request shape
-
-A future request should include:
 - request_id: client-generated idempotency/correlation identifier.
 - conversation_id: optional conversation identifier.
-- mode: a product mode such as general, learning, or research.
+- mode: general, writing, learning, coding, or research.
 - messages: bounded role/content entries.
-- attachments: optional server-issued attachment references.
+- attachments: optional server-issued attachment references in a future version.
 
 The client must not choose privileged provider credentials or bypass server-side entitlement checks.
 
-## Chat response shape
+## Operational behavior still required
+- Android authentication and a secure session lifecycle.
+- Android HTTP adapter and end-to-end tests.
+- Streaming and cancellation propagation.
+- Atomic per-account and per-IP rate limits.
+- Atomic quota enforcement and usage ledger.
+- Moderation, abuse prevention, and provider-health monitoring.
+- Cloud conversation storage, export, and deletion.
+- Explicit handling for unauthorized, quota-exceeded, rate-limited, unavailable, and invalid-input states.
 
-A successful response should include:
-- request_id
-- conversation_id
-- message_id
-- status
-- assistant_message
-- optional safe usage metadata
-
-Errors should use stable machine-readable codes and a user-safe message. Do not expose provider stack traces, secret names, or internal infrastructure details.
-
-## Operational behavior
-- Support cancellation and reasonable request timeouts.
-- Apply per-account and per-IP rate limits.
-- Enforce quotas atomically on the server to prevent parallel-request overuse.
-- Use bounded retries only for retryable failures and preserve idempotency.
-- Return explicit states for unauthorized, quota-exceeded, rate-limited, unavailable, and invalid-input conditions.
-
-## Not implemented yet
-No endpoint in this document is live. No database schema, authentication provider, billing provider, AI model, or production hosting environment has been selected or modified.
+## Deployment boundary
+No remote Supabase project, database schema, authentication settings, RLS, or function deployment has been changed. Deployment requires explicit approval of the independent ATLAS project and the account-authentication approach.
