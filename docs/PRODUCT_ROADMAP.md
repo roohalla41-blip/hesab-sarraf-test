@@ -35,6 +35,7 @@
 - [ ] Confirm the independent ATLAS backend destination and data boundaries
 - [ ] Select provider/model routing and configure server-side secrets
 - [x] Add authenticated Android HTTP adapter boundary (not yet wired)
+- [x] Add RemoteChatRepository adapter with explicit failure propagation (not yet wired to the screen)
 - [ ] Connect Android client to authenticated server API
 - [ ] Implement atomic quota, rate limiting, and abuse controls
 - [ ] Add streaming responses, cancellation, and retry behavior
@@ -56,4 +57,4 @@
 - [ ] Release signing configuration and signed Android App Bundle (AAB)
 - [ ] Google Play testing track and production rollout
 
-A checked item means the described source/UI behavior exists; it does not imply that it has passed device, security, or production testing. No release is considered complete until all release gates have evidence.
+A checked item means the described source/UI behavior exists; it does not imply that it has passed device, security, or production testing. The AI screen still uses an explicit not-connected response: the remote adapter exists, but no approved Google-to-Supabase session provider is wired, so the app cannot yet make authenticated live-model requests. No release is considered complete until all release gates have evidence.
