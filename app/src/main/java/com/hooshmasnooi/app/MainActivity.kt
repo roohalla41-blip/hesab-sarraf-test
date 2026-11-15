@@ -80,7 +80,9 @@ import com.hooshmasnooi.app.domain.repository.ChatHistoryRepository
 import java.util.UUID
 import kotlinx.coroutines.launch
 
-private const val MAX_VISIBLE_MESSAGES = 300\n\nprivate data class AtlasPage(val id: String, val title: String, val symbol: String)
+private const val MAX_VISIBLE_MESSAGES = 300
+
+private data class AtlasPage(val id: String, val title: String, val symbol: String)
 
 private val atlasPages = listOf(
     AtlasPage("chat", "گفت‌وگو", "✦"),
