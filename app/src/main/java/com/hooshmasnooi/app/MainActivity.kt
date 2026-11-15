@@ -636,7 +636,7 @@ private fun AtlasApp(
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "integrations" -> IntegrationsPage(
-                    gmailStatus, gmailMessages, gmailLoading, gmailConnected, gmailConnected,
+                    gmailStatus, gmailMessages, gmailLoading, gmailConnected,
                     onConnectGmail, onRefreshGmail, onDisconnectGmail,
                     Modifier.fillMaxSize().padding(padding)
                 )
