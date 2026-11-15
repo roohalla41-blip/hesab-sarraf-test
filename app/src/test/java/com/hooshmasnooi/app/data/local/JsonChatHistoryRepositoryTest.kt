@@ -101,7 +101,10 @@ class JsonChatHistoryRepositoryTest {
         val latest = conversation("latest")
         repository.saveConversation(latest)
         repeat(305) { index ->
-            repository.saveMessage(latest.id, ChatMessage(index.toLong(), "message-$index", true))
+            repository.saveConversationAndMessage(
+                latest.copy(updatedAtEpochMillis = index.toLong()),
+                ChatMessage(index.toLong(), "message-$index", true)
+            )
         }
 
         assertEquals(40, repository.getConversations().size)
@@ -163,7 +166,10 @@ class JsonChatHistoryRepositoryTest {
         kotlinx.coroutines.coroutineScope {
             (1L..20L).map { id ->
                 async(kotlinx.coroutines.Dispatchers.Default) {
-                    repository.saveMessage(item.id, ChatMessage(id, "message-$id", true))
+                    repository.saveConversationAndMessage(
+                        item.copy(updatedAtEpochMillis = id),
+                        ChatMessage(id, "message-$id", true)
+                    )
                 }
             }.forEach { it.await() }
         }
