@@ -799,8 +799,8 @@ private fun SettingsPage(
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle("تنظیمات", "گزینه‌های پایه برای آماده‌سازی تجربه کاربری.")
-        InfoCard("ظاهر برنامه", if (darkPreview) "حالت تاریک انتخاب شده (پیش‌نمایش)" else "حالت روشن انتخاب شده (پیش‌نمایش)")
-        Text("انتخاب ظاهر روی همین دستگاه ذخیره می‌شود؛ تغییر کامل رنگ‌بندی در مرحله بعد تکمیل می‌شود.",
+        InfoCard("ظاهر برنامه", if (darkPreview) "حالت تاریک فعال است" else "حالت روشن فعال است")
+        Text("انتخاب ظاهر ذخیره می‌شود و رنگ‌بندی بخش‌های برنامه را تغییر می‌دهد.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) { Text("تغییر حالت نمایشی") }
         Spacer(Modifier.height(12.dp))
