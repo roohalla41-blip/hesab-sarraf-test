@@ -46,6 +46,12 @@ object ChatStorage {
         val preferences = preferences(context)
         val raw = preferences.getString(KEY_CONVERSATIONS, null)
         if (raw.isNullOrBlank()) {
+            val backupRaw = preferences.getString(KEY_CONVERSATIONS_BACKUP, null)
+            val backup = parseConversations(backupRaw)
+            if (backup != null && !backupRaw.isNullOrBlank()) {
+                preferences.edit().putString(KEY_CONVERSATIONS, backupRaw).commit()
+                return backup
+            }
             val legacyRaw = preferences.getString(KEY_MESSAGES, null)
             val legacyMessages = parseMessages(legacyRaw)
             if (legacyMessages.isEmpty()) return emptyList()
