@@ -120,6 +120,25 @@ class ChatStorageTest {
     }
 
     @Test
+    fun missingCurrentSnapshotRecoversPreviousConversationSnapshot() {
+        val conversation = ChatStorage.createConversation(context)
+        ChatStorage.save(context, listOf(ChatMessage(1L, "recover me", true)), conversation.id)
+        ChatStorage.save(
+            context,
+            listOf(ChatMessage(1L, "recover me", true), ChatMessage(2L, "latest", true)),
+            conversation.id
+        )
+
+        context.getSharedPreferences("atlas_private_chat", Context.MODE_PRIVATE)
+            .edit()
+            .putString("conversations_v2", "")
+            .commit()
+
+        val recovered = ChatStorage.loadConversation(context, conversation.id)
+        assertEquals(listOf("recover me"), recovered.map { it.text })
+    }
+
+    @Test
     fun migratingLegacyHistoryKeepsNewestThreeHundredMessages() {
         val messages = JSONArray()
         (1L..350L).forEach { id ->
