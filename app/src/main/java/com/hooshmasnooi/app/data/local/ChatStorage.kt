@@ -220,7 +220,7 @@ object ChatStorage {
         keepPreviousSnapshot: Boolean = true
     ) {
         val array = JSONArray()
-        conversations.take(MAX_CONVERSATIONS).forEach { conversation ->
+        conversations.sortedByDescending { it.updatedAtEpochMillis }.take(MAX_CONVERSATIONS).forEach { conversation ->
             val messages = JSONArray()
             conversation.messages.takeLast(MAX_MESSAGES).forEach { message ->
                 messages.put(
