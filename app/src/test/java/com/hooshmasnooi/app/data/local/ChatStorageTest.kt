@@ -90,6 +90,36 @@ class ChatStorageTest {
     }
 
     @Test
+    fun corruptedCurrentSnapshotRecoversPreviousConversationSnapshot() {
+        val conversation = ChatStorage.createConversation(context)
+        ChatStorage.save(
+            context,
+            listOf(ChatMessage(1L, "first saved message", true)),
+            conversation.id
+        )
+        ChatStorage.save(
+            context,
+            listOf(
+                ChatMessage(1L, "first saved message", true),
+                ChatMessage(2L, "newer message", true)
+            ),
+            conversation.id
+        )
+
+        context.getSharedPreferences("atlas_private_chat", Context.MODE_PRIVATE)
+            .edit()
+            .putString("conversations_v2", "{broken-json")
+            .commit()
+
+        val recovered = ChatStorage.loadConversation(context, conversation.id)
+        assertEquals(1, recovered.size)
+        assertEquals("first saved message", recovered.single().text)
+        val restoredJson = context.getSharedPreferences("atlas_private_chat", Context.MODE_PRIVATE)
+            .getString("conversations_v2", null)
+        assertEquals(true, restoredJson?.startsWith("[") == true)
+    }
+
+    @Test
     fun migratingLegacyHistoryKeepsNewestThreeHundredMessages() {
         val messages = JSONArray()
         (1L..350L).forEach { id ->
