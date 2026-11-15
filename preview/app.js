@@ -51,29 +51,88 @@ function startNewChat() {
   setActivePanel("chat");
   sidebar.classList.remove("open");
 }
-function renderMessage(text) {
+const ATLAS_SUPABASE_URL = "https://wwlyvojtsrklcpqsloqz.supabase.co";
+const ATLAS_PUBLISHABLE_KEY = "sb_publishable_TFLE7E_j9-1H4DWM-yQ8GQ_15kUInFo";
+let isSending = false;
+
+function renderMessage(text, role = "user") {
   const bubble = document.createElement("div");
-  bubble.className = "message";
+  bubble.className = role === "assistant" ? "message assistant" : "message";
   bubble.textContent = text;
   messages.appendChild(bubble);
-  const notice = document.createElement("div");
-  notice.className = "notice";
-  notice.textContent = "پیام شما فقط در همین پیش‌نمایش نمایش داده شد. موتور هوش مصنوعی هنوز متصل نیست و هیچ پاسخ ساختگی تولید نشده است.";
-  messages.appendChild(notice);
   messages.scrollTop = messages.scrollHeight;
+  return bubble;
 }
-function sendMessage(value = promptInput.value) {
+
+async function requestAtlasReply() {
+  const latest = currentMessages[currentMessages.length - 1];
+  const history = currentMessages.slice(0, -1).slice(-8).map(item => ({
+    role: item.role === "assistant" ? "assistant" : "user",
+    content: item.text
+  }));
+  const response = await fetch(ATLAS_SUPABASE_URL + "/functions/v1/atlas-chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": ATLAS_PUBLISHABLE_KEY
+    },
+    body: JSON.stringify({
+      message: latest.text,
+      history,
+      mode: currentMode
+    })
+  });
+  let data = {};
+  try { data = await response.json(); } catch {}
+  if (!response.ok) {
+    throw new Error(typeof data.error === "string" ? data.error : "ارتباط با سرویس اطلس برقرار نشد.");
+  }
+  if (typeof data.reply !== "string" || !data.reply.trim()) {
+    throw new Error("پاسخ معتبری از موتور اطلس دریافت نشد.");
+  }
+  return data.reply.trim();
+}
+
+async function sendMessage(value = promptInput.value) {
   const text = value.trim();
-  if (!text) return;
+  if (!text || isSending) return;
   const id = currentMessages[0]?.conversationId || (Date.now() + Math.random()).toString(36);
-  currentMessages.push({ id: currentMessages.length + 1, conversationId: id, text, mode: currentMode });
+  currentMessages.push({
+    id: currentMessages.length + 1,
+    conversationId: id,
+    text,
+    mode: currentMode,
+    role: "user"
+  });
   saveCurrentConversation();
   welcome.hidden = true;
   pageView.hidden = true;
   messages.hidden = false;
   composerWrap.hidden = false;
-  renderMessage(text);
+  renderMessage(text, "user");
   promptInput.value = "";
+  isSending = true;
+  $("#send").disabled = true;
+  const pending = renderMessage("اطلس در حال آماده‌کردن پاسخ است...", "assistant");
+  try {
+    const answer = await requestAtlasReply();
+    pending.textContent = answer;
+    currentMessages.push({
+      id: currentMessages.length + 1,
+      conversationId: id,
+      text: answer,
+      mode: currentMode,
+      role: "assistant"
+    });
+    saveCurrentConversation();
+  } catch (error) {
+    pending.textContent = error?.message || "در دریافت پاسخ خطایی رخ داد. دوباره تلاش کن.";
+    pending.classList.add("error");
+  } finally {
+    isSending = false;
+    $("#send").disabled = false;
+    messages.scrollTop = messages.scrollHeight;
+  }
 }
 function setActivePanel(panel) {
   document.querySelectorAll(".nav-item").forEach(item => {
@@ -88,12 +147,12 @@ function featureCard(icon, title, description, state = "در نقشه راه") {
 function renderPanel(panel) {
   const panels = {
     history: `
-      <div class="page-heading"><div><div class="eyebrow">فضای کاری شما</div><h2>تاریخچه گفت‌وگوها</h2><p>مکالمه‌های همین نشست نمایشی در این فهرست دیده می‌شوند.</p></div><button class="primary-btn" data-action="new-chat">＋ گفت‌وگوی تازه</button></div>
+      <div class="page-heading"><div><div class="eyebrow">فضای کاری شما</div><h2>تاریخچه گفت‌وگوها</h2><p>گفت‌وگوهای ثبت‌شده در همین نشست در این فهرست دیده می‌شوند.</p></div><button class="primary-btn" data-action="new-chat">＋ گفت‌وگوی تازه</button></div>
       <div class="panel-card"><div class="panel-toolbar"><b>گفت‌وگوهای اخیر</b><span class="muted">${conversations.length} مورد در این نشست</span></div>
       ${conversations.length ? conversations.map(item => `<button class="history-row" data-conversation="${escapeHtml(item.id)}"><span class="history-icon">◷</span><span class="history-title"><b>${escapeHtml(item.title)}</b><small>${item.messages.length} پیام • ${item.updated.toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"})}</small></span><span class="muted">›</span></button>`).join("") : `<div class="empty-state"><div class="empty-icon">◷</div><b>هنوز گفت‌وگویی ثبت نشده</b><p>بعد از نوشتن نخستین پیام، عنوان آن در این قسمت نمایش داده می‌شود.</p></div>`}
       </div><p class="disclaimer">تاریخچه فعلاً فقط تا زمانی که این صفحه باز است در حافظه موقت مرورگر نگهداری می‌شود؛ ذخیره دائمی یا ابری فعال نیست.</p>`,
     explore: `
-      <div class="page-heading"><div><div class="eyebrow">Explore ATLAS</div><h2>کاوش دستیارها</h2><p>حالت‌های تخصصی برای کارهای گوناگون؛ انتخاب هر مورد فقط حالت نمایشی را تغییر می‌دهد.</p></div></div>
+      <div class="page-heading"><div><div class="eyebrow">Explore ATLAS</div><h2>کاوش دستیارها</h2><p>حالت‌های تخصصی برای کارهای گوناگون؛ انتخاب هر مورد شیوه پاسخ‌گویی اطلس را تنظیم می‌کند.</p></div></div>
       <div class="feature-grid">
         ${featureCard("✍","نویسنده و ویراستار","نگارش، بازنویسی، خلاصه‌سازی و ایده‌پردازی","قالب آماده")}
         ${featureCard("◈","مربی یادگیری","آموزش مرحله‌ای، تمرین و توضیح مفاهیم","قالب آماده")}
@@ -101,7 +160,7 @@ function renderPanel(panel) {
         ${featureCard("⌕","پژوهشگر","تحلیل موضوع، طرح پرسش و ساختار تحقیق","قالب آماده")}
         ${featureCard("◎","دستیار کسب‌وکار","برنامه‌ریزی، ایده تجاری و تحلیل فرایند","در نقشه راه")}
         ${featureCard("✧","دستیار عمومی","گفت‌وگوی چندمنظوره و پاسخ‌گویی عمومی","قالب آماده")}
-      </div><p class="disclaimer">این کارت‌ها رابط و تعریف محصول هستند؛ هیچ دستیار تخصصی هنوز به مدل هوش مصنوعی متصل نیست.</p>`,
+      </div><p class="disclaimer">حالت‌های عمومی، نوشتن، یادگیری، برنامه‌نویسی و تحقیق از موتور آنلاین اطلس استفاده می‌کنند.</p>`,
     tools: `
       <div class="page-heading"><div><div class="eyebrow">ATLAS TOOLBOX</div><h2>ابزارهای اطلس</h2><p>جایگاه ابزارهای آینده در یک محیط یکپارچه.</p></div></div>
       <div class="feature-grid">
@@ -114,7 +173,7 @@ function renderPanel(panel) {
       </div><p class="disclaimer">ابزارها تا زمان پیاده‌سازی، اتصال امن و آزمایش واقعی غیرفعال می‌مانند.</p>`,
     integrations: `
       <div class="page-heading"><div><div class="eyebrow">ATLAS CONNECT</div><h2>اتصال برنامه‌ها</h2><p>سرویس‌های خارجی را به اطلس وصل کن و دسترسی‌ها را خودت کنترل کن.</p></div></div>
-      <div class="security-banner"><span>⇄</span><div><b>مرکز اتصال ATLAS CONNECT</b><p>این نسخه فهرست سرویس‌ها و مسیر آماده‌سازی را به‌صورت تعاملی نشان می‌دهد؛ هنوز هیچ حسابی متصل نشده است.</p></div></div>
+      <div class="security-banner"><span>⇄</span><div><b>مرکز اتصال ATLAS CONNECT</b><p>این بخش وضعیت اتصال سرویس‌های خارجی را نشان می‌دهد؛ اتصال هر سرویس به مجوز جداگانه نیاز دارد.</p></div></div>
       <div class="integration-grid">
         <article class="integration-card"><div class="integration-mark github-mark">GH</div><div class="integration-copy"><b>GitHub</b><p>بررسی مخزن، خواندن فایل‌ها و کمک به توسعه کد</p><small>نیازمند ثبت OAuth App</small></div><button class="secondary-btn" data-integration="GitHub">جزئیات اتصال</button></article>
         <article class="integration-card"><div class="integration-mark gmail-mark">G</div><div class="integration-copy"><b>Gmail</b><p>جست‌وجو و خلاصه‌سازی ایمیل‌ها؛ ارسال فقط با تأیید</p><small>نیازمند OAuth و مجوزهای Gmail</small></div><button class="secondary-btn" data-integration="Gmail">جزئیات اتصال</button></article>
@@ -122,24 +181,24 @@ function renderPanel(panel) {
         <article class="integration-card"><div class="integration-mark supabase-mark">S</div><div class="integration-copy"><b>Supabase</b><p>مدیریت پروژه و عملیات مجاز از طریق بک‌اند امن</p><small>توکن فقط در سمت سرور</small></div><button class="secondary-btn" data-integration="Supabase">جزئیات اتصال</button></article>
         <article class="integration-card"><div class="integration-mark calendar-mark">▦</div><div class="integration-copy"><b>Google Calendar</b><p>خواندن برنامه‌ها و مدیریت رویدادها با اجازه</p><small>نیازمند OAuth و Calendar API</small></div><button class="secondary-btn" data-integration="Google Calendar">جزئیات اتصال</button></article>
       </div>
-      <p class="disclaimer">وضعیت همه سرویس‌ها: متصل نیست. این پیش‌نمایش توکن یا رمز عبور دریافت نمی‌کند و هنوز درخواست اتصال واقعی ارسال نمی‌کند.</p>`,
+      <p class="disclaimer">وضعیت اتصال سرویس‌های خارجی در این بخش نمایش داده می‌شود. برای امنیت، رمز عبور یا کلید خصوصی را در این صفحه وارد نکن.</p>`,
     profile: `
-      <div class="page-heading"><div><div class="eyebrow">ACCOUNT</div><h2>حساب کاربری</h2><p>نمای کلی حساب در نسخه ساختاری.</p></div></div>
-      <div class="profile-card"><div class="profile-avatar">A</div><div><h3>کاربر مهمان</h3><p class="muted">بدون ورود • حساب آنلاین ایجاد نشده</p><span class="state-pill">حالت محلی نمایشی</span></div></div>
+      <div class="page-heading"><div><div class="eyebrow">ACCOUNT</div><h2>حساب کاربری</h2><p>مدیریت حساب کاربری اطلس.</p></div></div>
+      <div class="profile-card"><div class="profile-avatar">A</div><div><h3>کاربر مهمان</h3><p class="muted">بدون ورود • حساب آنلاین ایجاد نشده</p><span class="state-pill">حساب مهمان</span></div></div>
       <div class="feature-grid">
         ${featureCard("◎","اطلاعات پروفایل","نام نمایشی، تصویر و مشخصات حساب","بعداً")}
         ${featureCard("◉","ورود و امنیت","ورود امن و مدیریت نشست‌ها","نیازمند طراحی")}
         ${featureCard("⇩","داده‌های من","دریافت یا حذف داده‌های ذخیره‌شده","بعداً")}
-      </div><p class="disclaimer">هیچ ثبت‌نام، رمز عبور، ایمیل یا حسابی در این پیش‌نمایش دریافت یا ذخیره نمی‌شود.</p>`,
+      </div><p class="disclaimer">ورود و ساخت حساب آنلاین هنوز فعال نشده است؛ این صفحه فعلاً وضعیت حساب مهمان را نمایش می‌دهد.</p>`,
     plans: `
-      <div class="page-heading"><div><div class="eyebrow">PLANS</div><h2>طرح‌های اشتراک</h2><p>ساختار پیشنهادی پلن‌ها؛ قیمت‌گذاری و پرداخت هنوز تعریف نشده است.</p></div></div>
+      <div class="page-heading"><div><div class="eyebrow">PLANS</div><h2>طرح‌های اشتراک</h2><p>طرح‌های اشتراک اطلس؛ قیمت‌گذاری و پرداخت هنوز فعال نشده است.</p></div></div>
       <div class="plan-grid">
         <article class="plan-card"><span class="state-pill">شروع</span><h3>رایگان</h3><p>برای آشنایی با اطلس</p><ul><li>گفت‌وگوی پایه</li><li>سهمیه محدود پس از اتصال</li><li>ابزارهای پایه</li></ul><button class="secondary-btn" disabled>هنوز فعال نیست</button></article>
         <article class="plan-card featured-plan"><span class="state-pill">پیشنهادی</span><h3>پلاس</h3><p>برای استفاده روزمره و حرفه‌ای</p><ul><li>سهمیه بیشتر</li><li>مدل‌های پیشرفته‌تر</li><li>ابزارهای تخصصی</li></ul><button class="secondary-btn" disabled>هنوز فعال نیست</button></article>
         <article class="plan-card"><span class="state-pill">حرفه‌ای</span><h3>پرو</h3><p>برای کارهای سنگین و تخصصی</p><ul><li>سقف مصرف بالاتر</li><li>قابلیت‌های پیشرفته</li><li>اولویت پردازش</li></ul><button class="secondary-btn" disabled>هنوز فعال نیست</button></article>
       </div><p class="disclaimer">هیچ مبلغی دریافت نمی‌شود و هیچ درگاه پرداختی متصل نیست.</p>`,
     settings: `
-      <div class="page-heading"><div><div class="eyebrow">PREFERENCES</div><h2>تنظیمات</h2><p>گزینه‌های نمایشی محیط اطلس.</p></div></div>
+      <div class="page-heading"><div><div class="eyebrow">PREFERENCES</div><h2>تنظیمات</h2><p>تنظیمات محیط اطلس.</p></div></div>
       <div class="settings-list">
         <div class="setting-row"><div><b>ظاهر برنامه</b><small>انتخاب پوسته روشن یا تاریک</small></div><button class="secondary-btn" data-action="theme">تغییر پوسته</button></div>
         <div class="setting-row"><div><b>زبان رابط</b><small>فارسی فعال است؛ انگلیسی و دری در مرحله تکمیل هستند.</small></div><button class="secondary-btn" data-action="language">FA / EN</button></div>
@@ -159,11 +218,11 @@ function renderPanel(panel) {
     help: `
       <div class="page-heading"><div><div class="eyebrow">HELP CENTER</div><h2>راهنما و پشتیبانی</h2><p>راهنمای استفاده از بخش‌های اصلی برنامه.</p></div></div>
       <div class="faq-list">
-        <details open><summary>آیا اطلس اکنون پاسخ هوش مصنوعی می‌دهد؟</summary><p>خیر. در این مرحله فقط رابط کاربری و ساختار برنامه آماده می‌شود. اتصال مدل در مرحله جداگانه انجام خواهد شد.</p></details>
-        <details><summary>آیا برای دیدن ساختار به کلید نیاز دارم؟</summary><p>خیر. ساختار، صفحات، منوها و تنظیمات نمایشی بدون کلید قابل طراحی و بررسی هستند.</p></details>
-        <details><summary>آیا اطلاعات این پیش‌نمایش ذخیره می‌شوند؟</summary><p>خیر. پیام‌ها فقط در حافظه موقت همین نشست نمایشی نگهداری می‌شوند.</p></details>
+        <details open><summary>آیا اطلس پاسخ هوش مصنوعی تولید می‌کند؟</summary><p>بله. گفت‌وگوی عمومی از موتور آنلاین اطلس پاسخ می‌گیرد؛ ابزارهای اختصاصی مانند تحلیل فایل و تصویر جداگانه در حال توسعه‌اند.</p></details>
+        <details><summary>آیا برای گفت‌وگو به اینترنت نیاز دارم؟</summary><p>بله. برای دریافت پاسخ از مدل هوش مصنوعی باید اتصال اینترنت برقرار باشد.</p></details>
+        <details><summary>آیا تاریخچه گفتگوها ذخیره ابری می‌شود؟</summary><p>گفت‌وگوهای این صفحه فعلاً در حافظه همین نشست مرورگر نگهداری می‌شوند و ذخیره ابری هنوز فعال نیست.</p></details>
         <details><summary>چه زمانی قابلیت‌ها فعال می‌شوند؟</summary><p>پس از تکمیل رابط، بازبینی امنیتی، انتخاب سرویس و اجازه جداگانه برای اتصال.</p></details>
-      </div><div class="support-card"><b>پشتیبانی اطلس</b><p>راه ارتباطی رسمی در زمان آماده‌سازی نسخه انتشار اضافه خواهد شد.</p><span class="state-pill">در حال طراحی</span></div>`
+      </div><div class="support-card"><b>پشتیبانی اطلس</b><p>اطلاعات تماس پشتیبانی رسمی در حال تکمیل است.</p><span class="state-pill">در حال طراحی</span></div>`
   };
   pageView.innerHTML = panels[panel] || "";
   pageView.hidden = false;
@@ -198,7 +257,7 @@ function toggleTheme() {
 }
 function toggleLanguage() {
   selectedLanguage = selectedLanguage === "fa" ? "en" : "fa";
-  notify(selectedLanguage === "en" ? "رابط انگلیسی در مرحله تکمیل است؛ پیش‌نمایش فعلاً فارسی است." : "زبان پیش‌نمایش: فارسی");
+  notify(selectedLanguage === "en" ? "رابط انگلیسی هنوز تکمیل نشده است؛ زبان فعلی فارسی است." : "زبان رابط: فارسی");
 }
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => {
   const panel = button.dataset.panel;
