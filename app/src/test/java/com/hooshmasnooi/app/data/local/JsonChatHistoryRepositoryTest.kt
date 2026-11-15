@@ -191,7 +191,7 @@ class JsonChatHistoryRepositoryTest {
                         item.copy(updatedAtEpochMillis = id),
                         ChatMessage(id, "message-$id", true)
                     )
-                }.also { }
+                }
             }.forEach { it.await() }
         }
 
