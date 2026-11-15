@@ -10,7 +10,6 @@ const conversations = [];
 let currentMessages = [];
 let currentMode = "عمومی";
 const browserLanguage = (navigator.languages?.[0] || navigator.language || "fa").toLowerCase();
-const browserIsRtl = /^(fa|prs|ps|ar|ur|he)(-|$)/.test(browserLanguage);
 const browserLanguageLabel = browserLanguage.startsWith("fa") ? "فارسی" : browserLanguage.startsWith("prs") ? "دری" : browserLanguage.startsWith("en") ? "English" : browserLanguage;
 let darkMode = true;
 
@@ -168,7 +167,7 @@ function renderPanel(panel) {
       <div class="settings-list">
         <div class="setting-row"><div><b>ظاهر برنامه</b><small>انتخاب پوسته روشن یا تاریک</small></div><button class="secondary-btn" data-action="theme">تغییر پوسته</button></div>
         <div class="setting-row"><div><b>زبان دستگاه</b><small>زبان شناسایی‌شده مرورگر: ${escapeHtml(browserLanguageLabel)} (${escapeHtml(browserLanguage)})</small></div><span class="state-pill">تشخیص خودکار</span></div>
-        <div class="setting-row"><div><b>جهت نوشتار</b><small>جهت فعلی براساس زبان مرورگر تعیین شده است.</small></div><span class="state-pill">${browserIsRtl ? "راست‌به‌چپ" : "چپ‌به‌راست"}</span></div>
+        <div class="setting-row"><div><b>جهت نوشتار</b><small>این پیش‌نمایش فعلاً با چیدمان فارسی نمایش داده می‌شود.</small></div><span class="state-pill">راست‌به‌چپ</span></div>
         <div class="setting-row"><div><b>اندازه نوشته</b><small>اندازه استاندارد رابط کاربری</small></div><span class="state-pill">استاندارد</span></div>
         <div class="setting-row"><div><b>اعلان‌ها</b><small>تنظیم اعلان‌های برنامه پس از ساخت حساب</small></div><span class="state-pill">بعداً</span></div>
         <div class="setting-row"><div><b>دسترس‌پذیری</b><small>کنتراست، خوانایی و پشتیبانی صفحه‌خوان</small></div><span class="state-pill">در نقشه راه</span></div>
