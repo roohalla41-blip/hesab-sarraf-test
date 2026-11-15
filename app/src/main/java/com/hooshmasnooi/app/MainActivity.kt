@@ -97,6 +97,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.data.local.ChatStorage
+import com.hooshmasnooi.app.data.local.StoredConversation
 
 private fun isGmailCheckRequest(text: String): Boolean {
     val normalized = text.lowercase()
@@ -351,22 +352,39 @@ private fun AtlasApp(
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
-    val messages = remember { mutableStateListOf<ChatMessage>().apply { addAll(ChatStorage.load(appContext)) } }
+    val initialConversation = remember { ChatStorage.ensureActive(appContext) }
+    val conversations = remember {
+        mutableStateListOf<StoredConversation>().apply { addAll(ChatStorage.loadAll(appContext)) }
+    }
+    var activeConversationId by remember { mutableStateOf(initialConversation.id) }
+    val messages = remember {
+        mutableStateListOf<ChatMessage>().apply { addAll(initialConversation.messages) }
+    }
     var nextId by remember { mutableStateOf((messages.maxOfOrNull { it.id } ?: 0L) + 1L) }
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    fun refreshConversations() {
+        conversations.clear()
+        conversations.addAll(ChatStorage.loadAll(appContext))
+    }
+
+    fun persistCurrentConversation() {
+        ChatStorage.save(appContext, messages, activeConversationId)
+        refreshConversations()
+    }
+
     fun sendMessage(rawText: String) {
         val cleanText = rawText.trim()
         if (cleanText.isNotEmpty()) {
             messages.add(ChatMessage(nextId++, cleanText, true))
-            ChatStorage.save(appContext, messages)
+            persistCurrentConversation()
             input = ""
             if (isGmailCheckRequest(cleanText)) {
                 val pendingId = nextId++
                 messages.add(ChatMessage(pendingId, "در حال بررسی صندوق ورودی Gmail...", false))
-                ChatStorage.save(appContext, messages)
+                persistCurrentConversation()
                 onReadGmailForChat { answer ->
                     val pendingIndex = messages.indexOfFirst { it.id == pendingId }
                     if (pendingIndex >= 0) {
@@ -374,8 +392,17 @@ private fun AtlasApp(
                     } else {
                         messages.add(ChatMessage(nextId++, answer, false))
                     }
-                    ChatStorage.save(appContext, messages)
+                    persistCurrentConversation()
                 }
+            } else {
+                messages.add(
+                    ChatMessage(
+                        nextId++,
+                        "پیام شما در اطلس ذخیره شد؛ اما موتور هوش مصنوعی عمومی هنوز متصل نشده است. تا زمان تکمیل اتصال مدل، پاسخ‌گویی عمومی فعال نیست. قابلیت عملیاتی فعلی Gmail فقط پس از اتصال حساب قابل استفاده است.",
+                        false
+                    )
+                )
+                persistCurrentConversation()
             }
         }
     }
@@ -484,8 +511,11 @@ private fun AtlasApp(
                     },
                     actions = {
                         IconButton(onClick = {
+                            val created = ChatStorage.createConversation(appContext)
+                            activeConversationId = created.id
                             messages.clear()
-                            ChatStorage.clear(appContext)
+                            nextId = 1L
+                            refreshConversations()
                             input = ""
                             currentPage = "chat"
                         }) {
@@ -547,7 +577,18 @@ private fun AtlasApp(
                 "chat" -> ChatPage(messages, listState, Modifier.fillMaxSize().padding(padding)) {
                     sendMessage(it)
                 }
-                "history" -> HistoryPage(messages, Modifier.fillMaxSize().padding(padding))
+                "history" -> HistoryPage(
+                    conversations,
+                    activeConversationId,
+                    Modifier.fillMaxSize().padding(padding)
+                ) { selected ->
+                    ChatStorage.setActiveConversation(appContext, selected.id)
+                    activeConversationId = selected.id
+                    messages.clear()
+                    messages.addAll(selected.messages)
+                    nextId = (messages.maxOfOrNull { it.id } ?: 0L) + 1L
+                    currentPage = "chat"
+                }
                 "explore" -> FeaturePage(
                     "کاوش دستیارها",
                     "حالت‌های کاری تخصصی برای نیازهای مختلف.",
@@ -898,19 +939,69 @@ private fun IntegrationsPage(
 }
 
 @Composable
-private fun HistoryPage(messages: List<ChatMessage>, modifier: Modifier = Modifier) {
+private fun HistoryPage(
+    conversations: List<StoredConversation>,
+    activeConversationId: String,
+    modifier: Modifier = Modifier,
+    onOpenConversation: (StoredConversation) -> Unit
+) {
+    val visibleConversations = conversations.filter { it.messageCount > 0 }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تاریخچه گفت‌وگوها", "پیام‌های این دستگاه از فضای خصوصی برنامه خوانده می‌شوند.")
-        if (messages.isEmpty()) {
-            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با شروع یک گفت‌وگو، پیام‌های این نشست اینجا دیده می‌شوند.")
+        PageTitle("تاریخچه گفت‌وگوها", "مکالمه‌های ذخیره‌شده روی همین دستگاه را باز کن و ادامه بده.")
+        if (visibleConversations.isEmpty()) {
+            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.")
         } else {
-            messages.forEach { message ->
-                InfoCard("پیام " + message.id, message.text)
-                Spacer(Modifier.height(8.dp))
+            visibleConversations.forEach { conversation ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (conversation.id == activeConversationId)
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                    )
+                ) {
+                    Column(Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                conversation.title,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 2
+                            )
+                            if (conversation.id == activeConversationId) {
+                                Text("فعال", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
+                            }
+                        }
+                        Spacer(Modifier.height(5.dp))
+                        Text(
+                            conversation.messages.lastOrNull()?.text?.take(100).orEmpty(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            maxLines = 2
+                        )
+                        Spacer(Modifier.height(7.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                conversation.messageCount.toString() + " پیام",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 10.sp
+                            )
+                            Spacer(Modifier.weight(1f))
+                            TextButton(onClick = { onOpenConversation(conversation) }) {
+                                Text(if (conversation.id == activeConversationId) "ادامه گفت‌وگو" else "بازکردن")
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(9.dp))
             }
         }
-        Text("ذخیره محلی فعال است؛ همگام‌سازی ابری هنوز فعال نیست.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        Text(
+            "تاریخچه فقط روی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
