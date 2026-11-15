@@ -14,7 +14,7 @@ This is a repository-only implementation. It does not deploy or configure Supaba
 - GitHub Actions now type-checks the Edge Function with Deno and runs Android unit tests plus debug package validation.
 
 ## Provider environment configuration
-- Z.AI: ZAI_API_KEY, optional ZAI_MODEL (defaults to glm-5.3), optional ZAI_API_URL (defaults to the standard chat-completions endpoint).
+- Z.AI: ZAI_API_KEY and ZAI_MODEL are both required; optional ZAI_API_URL defaults to the standard chat-completions endpoint. No paid model is selected implicitly.
 - Cloudflare Workers AI: CLOUDFLARE_API_TOKEN or ATLAS_CLOUDFLARE, plus CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_MODEL.
 - Generic OpenAI-compatible provider: AI_API_KEY, AI_MODEL, and optional AI_API_URL (base URL; defaults to the OpenAI v1 base).
 - AI_PROVIDER_ORDER optionally selects the fallback order, for example zai,cloudflare,openai.
