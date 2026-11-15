@@ -23,7 +23,7 @@ object ChatStorage {
     private const val KEY_MESSAGES = "messages"
     private const val KEY_CONVERSATIONS = "conversations_v2"
     private const val KEY_ACTIVE_CONVERSATION = "active_conversation"
-    private const val MAX_MESSAGES = 2000
+    private const val MAX_MESSAGES = 300
     private const val MAX_CONVERSATIONS = 100
 
     fun ensureActive(context: Context): StoredConversation {
@@ -166,8 +166,9 @@ object ChatStorage {
 
     private fun parseMessages(array: JSONArray?): List<ChatMessage> {
         if (array == null) return emptyList()
+        val firstRetainedIndex = (array.length() - MAX_MESSAGES).coerceAtLeast(0)
         return buildList {
-            for (index in 0 until minOf(array.length(), MAX_MESSAGES)) {
+            for (index in firstRetainedIndex until array.length()) {
                 val item = array.optJSONObject(index) ?: continue
                 val id = item.optLong("id", index.toLong() + 1L)
                 val text = item.optString("text", "")
