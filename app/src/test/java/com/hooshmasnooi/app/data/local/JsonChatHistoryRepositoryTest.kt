@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.domain.model.Conversation
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -161,7 +162,7 @@ class JsonChatHistoryRepositoryTest {
 
         kotlinx.coroutines.coroutineScope {
             (1L..20L).map { id ->
-                kotlinx.coroutines.async(kotlinx.coroutines.Dispatchers.Default) {
+                async(kotlinx.coroutines.Dispatchers.Default) {
                     repository.saveMessage(item.id, ChatMessage(id, "message-$id", true))
                 }
             }.forEach { it.await() }
