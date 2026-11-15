@@ -85,6 +85,20 @@ class JsonChatHistoryRepositoryTest {
     }
 
     @Test
+    fun atomicAppendIgnoresDuplicateMessageIds() = runBlocking {
+        val item = conversation("atomic-duplicate")
+        repository.saveConversationAndMessage(item, ChatMessage(7L, "نسخه اول", true))
+        repository.saveConversationAndMessage(
+            item.copy(title = "عنوان تازه"),
+            ChatMessage(7L, "نسخه تکراری", true)
+        )
+
+        assertEquals(listOf("نسخه اول"), repository.getMessages(item.id).map { it.text })
+        assertEquals(1, repository.getConversations().single().messageCount)
+        assertEquals("عنوان تازه", repository.getConversations().single().title)
+    }
+
+    @Test
     fun deletesOneConversationWithoutRemovingOthers() = runBlocking {
         repository.saveConversation(conversation("one"))
         repository.saveConversation(conversation("two"))
