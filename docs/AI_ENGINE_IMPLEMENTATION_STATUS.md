@@ -22,7 +22,7 @@ This is a repository-only implementation. It does not deploy or configure Supaba
 
 ## Not implemented
 - No provider secrets have been deployed or tested against a live model.
-- No Android HTTP adapter is connected to the Edge Function.
+- An authenticated Android HTTP adapter exists and validates request bounds, but it is not wired into the UI because no approved account session or project configuration is available.
 - No Supabase project has been linked or deployed from this repository.
 - No account authentication flow is implemented in Android; the function's JWT requirement therefore prevents unauthenticated app calls.
 - No streaming/SSE or Android cancellation propagation.
