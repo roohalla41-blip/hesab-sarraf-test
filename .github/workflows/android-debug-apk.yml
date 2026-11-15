@@ -1,8 +1,7 @@
 name: ATLAS Android and Edge Function validation
 
 on:
-  push:
-    branches: [main]
+  # Manual only: do not build or test until the user explicitly requests it.
   workflow_dispatch:
 
 permissions:
