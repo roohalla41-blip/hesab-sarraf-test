@@ -494,7 +494,7 @@ private fun AtlasApp(
                             }
                             Spacer(Modifier.height(15.dp))
                             Text(AtlasText.of("دستیار هوشمند چندسرویس", "Multi-service AI assistant"), color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold)
-                            Text(AtlasText.of("نسخه اولیه • در حال توسعه", "Early access • In development"), color = Color(0xFF9FB4CC), fontSize = 11.sp)
+                            Text(AtlasText.of("فضای هوشمند اطلس", "Early access • In development"), color = Color(0xFF9FB4CC), fontSize = 11.sp)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -803,7 +803,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
         }
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.ChatBubbleOutline, AtlasText.of("گفت‌وگوی هوشمند", "AI chat"), AtlasText.of("تعامل و پاسخ‌گویی", "Conversation and answers"), Color(0xFF9B91FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.ChatBubbleOutline, AtlasText.of("گفت‌وگوی هوشمند", "AI chat"), AtlasText.of("تعامل و پاسخ‌گویی", "Conversation and answers"), Color(0xFF9B91FF), Modifier.weight(1f), state = AtlasText.of("فعال", "Active"))
             AtlasToolCard(Icons.Filled.Image, AtlasText.of("هوش تصویری", "Image intelligence"), AtlasText.of("تحلیل و تولید تصویر", "Image analysis and generation"), Color(0xFF62B8FF), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
@@ -847,10 +847,11 @@ private fun AtlasToolCard(
     title: String,
     subtitle: String,
     tint: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    state: String = AtlasText.of("در نقشه راه", "Planned")
 ) {
     Card(
-        modifier = modifier.height(112.dp),
+        modifier = modifier.height(120.dp),
         shape = RoundedCornerShape(19.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF14243A))
     ) {
@@ -865,11 +866,11 @@ private fun AtlasToolCard(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                Text(AtlasText.of("در حال توسعه", "In development"), fontSize = 8.sp, color = Color(0xFF91A5BF))
+                Text(state, fontSize = 9.sp, color = if (state == AtlasText.of("فعال", "Active")) Color(0xFF70DCCE) else Color(0xFF91A5BF))
             }
             Column {
-                Text(title, color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                Text(subtitle, color = Color(0xFF91A5BF), fontSize = 9.sp)
+                Text(title, color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text(subtitle, color = Color(0xFF91A5BF), fontSize = 10.sp, lineHeight = 15.sp)
             }
         }
     }
@@ -951,10 +952,10 @@ private fun IntegrationsPage(
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text(AtlasText.of("موتور هوش مصنوعی اطلس", "ATLAS AI engine"), fontWeight = FontWeight.Bold)
-                        Text(AtlasText.of("مسیر چندارائه‌دهنده در حال توسعه شده", "Multi-provider routing prepared"),
+                        Text(AtlasText.of("مسیر درخواست به بک‌اند اطلس متصل است", "Requests are routed to the ATLAS backend"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
-                    Text(AtlasText.of("غیرفعال", "Inactive"), color = MaterialTheme.colorScheme.error,
+                    Text(AtlasText.of("پیکربندی شده", "Configured"), color = MaterialTheme.colorScheme.primary,
                         fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Spacer(Modifier.height(10.dp))
@@ -963,7 +964,7 @@ private fun IntegrationsPage(
                 Spacer(Modifier.height(6.dp))
                 Text(
                     AtlasText.of(
-                        "کد سمت سرور برای جابه‌جایی بین ارائه‌دهندگان آماده است؛ اما تا تعیین پروژه مستقل، روش ورود کاربر و آزمایش واقعی، چت عمومی فعال نمی‌شود.",
+                        "درخواست‌های گفت‌وگو به تابع امن atlas-chat ارسال می‌شوند. پاسخ نهایی به تنظیمات معتبر ارائه‌دهنده هوش مصنوعی در سمت سرور وابسته است.",
                         "Server-side provider fallback is prepared. General chat stays disabled until the independent project, user sign-in, and live tests are completed."
                     ),
                     style = MaterialTheme.typography.bodySmall,
@@ -1340,7 +1341,7 @@ private fun SettingsPage(
         Spacer(Modifier.height(8.dp))
         InfoCard(
             AtlasText.of("کلیدهای سرویس‌ها", "Service credentials"),
-            AtlasText.of("کلیدهای هوش مصنوعی نباید داخل برنامه یا فایل APK قرار بگیرند؛ اتصال سرور هنوز فعال نشده است.", "AI provider keys must never be embedded in the app or APK; the server connection is not active yet.")
+            AtlasText.of("کلیدهای هوش مصنوعی فقط در سمت سرور نگهداری می‌شوند و داخل برنامه یا فایل APK قرار نمی‌گیرند.", "AI provider keys must never be embedded in the app or APK; the server connection is not active yet.")
         )
         Spacer(Modifier.height(18.dp))
         Text(AtlasText.of("دسترس‌پذیری", "Accessibility"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
