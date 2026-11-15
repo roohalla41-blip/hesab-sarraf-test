@@ -110,6 +110,8 @@ private fun isGmailCheckRequest(text: String): Boolean {
     return mentionsGmail && asksToCheck
 }
 
+private const val MAX_VISIBLE_MESSAGES = 300
+
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
 
 private val atlasPages = listOf(
@@ -383,6 +385,10 @@ private fun AtlasApp(
     }
 
     fun persistCurrentConversation() {
+        // Keep the visible conversation and on-device storage under the same FIFO cap.
+        while (messages.size > MAX_VISIBLE_MESSAGES) {
+            messages.removeAt(0)
+        }
         ChatStorage.save(appContext, messages, activeConversationId)
         refreshConversations()
     }
