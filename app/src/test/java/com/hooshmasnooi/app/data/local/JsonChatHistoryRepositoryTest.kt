@@ -179,6 +179,29 @@ class JsonChatHistoryRepositoryTest {
         assertEquals((1L..20L).toSet(), saved.map { it.id }.toSet())
     }
 
+    @Test
+    fun concurrentOverflowKeepsNewestMessagesInChronologicalOrder() = runBlocking {
+        val item = conversation("concurrent-overflow")
+        repository.saveConversation(item)
+
+        kotlinx.coroutines.coroutineScope {
+            (0L until 350L).map { id ->
+                async(kotlinx.coroutines.Dispatchers.Default) {
+                    repository.saveConversationAndMessage(
+                        item.copy(updatedAtEpochMillis = id),
+                        ChatMessage(id, "message-$id", true)
+                    )
+                }.also { }
+            }.forEach { it.await() }
+        }
+
+        val saved = repository.getMessages(item.id)
+        assertEquals(300, saved.size)
+        assertEquals(50L, saved.first().id)
+        assertEquals(349L, saved.last().id)
+        assertEquals((50L until 350L).toList(), saved.map { it.id })
+    }
+
     private fun conversation(id: String, updatedAt: Long = 10L) = Conversation(
         id = id,
         title = id,
