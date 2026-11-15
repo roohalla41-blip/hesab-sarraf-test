@@ -115,7 +115,13 @@ object ChatStorage {
         val now = System.currentTimeMillis()
         val updated = StoredConversation(
             id = id,
-            title = if (messages.isEmpty()) existing?.title ?: AtlasText.of("گفت‌وگوی جدید", "New conversation") else titleFor(messages),
+            title = existing?.title
+                ?.takeIf { it.isNotBlank() && it != AtlasText.of("گفت‌وگوی جدید", "New conversation") }
+                ?: if (messages.isEmpty()) {
+                    existing?.title ?: AtlasText.of("گفت‌وگوی جدید", "New conversation")
+                } else {
+                    titleFor(messages)
+                },
             createdAtEpochMillis = existing?.createdAtEpochMillis ?: now,
             updatedAtEpochMillis = now,
             messages = messages.takeLast(MAX_MESSAGES)
