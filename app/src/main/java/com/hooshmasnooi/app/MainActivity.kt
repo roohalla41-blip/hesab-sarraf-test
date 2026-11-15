@@ -197,8 +197,7 @@ private fun AtlasApp(
         input = ""
         scope.launch {
             runCatching {
-                historyRepository.saveConversation(conversation)
-                historyRepository.saveMessage(conversationId, message)
+                historyRepository.saveConversationAndMessage(conversation, message)
                 val refreshed = historyRepository.getConversations()
                 conversations.clear()
                 conversations.addAll(refreshed)
