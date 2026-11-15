@@ -29,7 +29,7 @@ The Android app contains a Gmail read-only integration path.
 6. Connect Gmail from ATLAS CONNECT and approve read-only access.
 7. Confirm that inbox messages load and that the Gmail-check chat command returns a summary.
 
-GitHub Actions is configured to run Android unit tests and assemble a debug package on pushes to `main`; the latest run result has not been reviewed as part of this documentation update.
+A manual GitHub Actions workflow is available for Android unit tests and debug-package assembly. It is not run automatically; trigger it only when the user asks for validation.
 
 ## General AI chat
 - Android and browser clients call the deployed `atlas-chat` function in configured Supabase project ref `wwlyvojtsrklcpqsloqz`.
