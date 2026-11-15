@@ -57,7 +57,8 @@ function buildProviderConfigs(): ProviderConfig[] {
   const configs = new Map<ProviderName, ProviderConfig>();
 
   const zaiKey = Deno.env.get("ZAI_API_KEY");
-  if (zaiKey) {
+  const zaiModel = Deno.env.get("ZAI_MODEL");
+  if (zaiKey && zaiModel) {
     const endpoint = httpsUrl(
       Deno.env.get("ZAI_API_URL") ?? "https://api.z.ai/api/paas/v4/chat/completions"
     );
@@ -66,7 +67,7 @@ function buildProviderConfigs(): ProviderConfig[] {
         name: "zai",
         endpoint,
         apiKey: zaiKey,
-        model: Deno.env.get("ZAI_MODEL") ?? "glm-5.3",
+        model: zaiModel,
       });
     }
   }
