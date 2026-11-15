@@ -580,15 +580,27 @@ private fun AtlasApp(
                 "history" -> HistoryPage(
                     conversations,
                     activeConversationId,
-                    Modifier.fillMaxSize().padding(padding)
-                ) { selected ->
-                    ChatStorage.setActiveConversation(appContext, selected.id)
-                    activeConversationId = selected.id
-                    messages.clear()
-                    messages.addAll(selected.messages)
-                    nextId = (messages.maxOfOrNull { it.id } ?: 0L) + 1L
-                    currentPage = "chat"
-                }
+                    Modifier.fillMaxSize().padding(padding),
+                    onOpenConversation = { selected ->
+                        ChatStorage.setActiveConversation(appContext, selected.id)
+                        activeConversationId = selected.id
+                        messages.clear()
+                        messages.addAll(selected.messages)
+                        nextId = (messages.maxOfOrNull { it.id } ?: 0L) + 1L
+                        currentPage = "chat"
+                    },
+                    onDeleteConversation = { selected ->
+                        ChatStorage.deleteConversation(appContext, selected.id)
+                        if (activeConversationId == selected.id) {
+                            val replacement = ChatStorage.ensureActive(appContext)
+                            activeConversationId = replacement.id
+                            messages.clear()
+                            messages.addAll(replacement.messages)
+                            nextId = (messages.maxOfOrNull { it.id } ?: 0L) + 1L
+                        }
+                        refreshConversations()
+                    }
+                )
                 "explore" -> FeaturePage(
                     "کاوش دستیارها",
                     "حالت‌های کاری تخصصی برای نیازهای مختلف.",
@@ -943,11 +955,13 @@ private fun HistoryPage(
     conversations: List<StoredConversation>,
     activeConversationId: String,
     modifier: Modifier = Modifier,
-    onOpenConversation: (StoredConversation) -> Unit
+    onOpenConversation: (StoredConversation) -> Unit,
+    onDeleteConversation: (StoredConversation) -> Unit
 ) {
+    var pendingDelete by remember { mutableStateOf<StoredConversation?>(null) }
     val visibleConversations = conversations.filter { it.messageCount > 0 }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تاریخچه گفت‌وگوها", "مکالمه‌های ذخیره‌شده روی همین دستگاه را باز کن و ادامه بده.")
+        PageTitle("تاریخچه گفت‌وگوها", "مکالمه‌های ذخیره‌شده روی همین دستگاه را باز کن، ادامه بده یا حذف کن.")
         if (visibleConversations.isEmpty()) {
             EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.")
         } else {
@@ -988,6 +1002,7 @@ private fun HistoryPage(
                                 fontSize = 10.sp
                             )
                             Spacer(Modifier.weight(1f))
+                            TextButton(onClick = { pendingDelete = conversation }) { Text("حذف") }
                             TextButton(onClick = { onOpenConversation(conversation) }) {
                                 Text(if (conversation.id == activeConversationId) "ادامه گفت‌وگو" else "بازکردن")
                             }
@@ -1001,6 +1016,22 @@ private fun HistoryPage(
             "تاریخچه فقط روی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelSmall
+        )
+    }
+    pendingDelete?.let { selected ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("حذف گفت‌وگو؟") },
+            text = { Text("«" + selected.title + "» و پیام‌های ذخیره‌شده آن از این دستگاه حذف می‌شوند.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteConversation(selected)
+                    pendingDelete = null
+                }) { Text("حذف") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("انصراف") }
+            }
         )
     }
 }
