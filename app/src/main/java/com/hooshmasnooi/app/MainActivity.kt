@@ -171,7 +171,7 @@ class MainActivity : ComponentActivity() {
         val token = result.accessToken
         if (token.isNullOrBlank()) {
             throw IllegalStateException(
-                "Google نتیجه داد، اما توکن دسترسی Gmail برنگرداند. تنظیم OAuth Android و مجوز gmail.readonly را بررسی کن."
+                AtlasText.of("Google نتیجه داد، اما توکن دسترسی Gmail برنگرداند. تنظیم OAuth Android و مجوز gmail.readonly را بررسی کن.", "Google returned no Gmail access token. Check the Android OAuth client and gmail.readonly permission.")
             )
         }
         gmailAccessToken = token
@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
         gmailConnected = false
         gmailAccessToken = null
         val detail = error.localizedMessage ?: error.message ?: error.javaClass.simpleName
-        gmailStatus = "اتصال Gmail ناموفق بود: $detail"
+        gmailStatus = AtlasText.of("اتصال Gmail ناموفق بود: $detail", "Gmail connection failed: $detail")
         pendingGmailChatResult?.invoke(gmailStatus)
         pendingGmailChatResult = null
     }
@@ -207,9 +207,9 @@ class MainActivity : ComponentActivity() {
             try {
                 gmailMessages = GmailApi.latestInbox(token)
                 gmailStatus = if (gmailMessages.isEmpty()) AtlasText.of("اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد.", "Connected successfully; no inbox messages were found.")
-                    else "اتصال موفق است؛ ${gmailMessages.size} ایمیل اخیر دریافت شد."
+                    else AtlasText.of("اتصال موفق است؛ ${gmailMessages.size} ایمیل اخیر دریافت شد.", "Connected successfully; retrieved ${gmailMessages.size} recent emails.")
             } catch (error: Exception) {
-                gmailStatus = "دریافت ایمیل ناموفق بود: ${error.localizedMessage ?: "خطای شبکه یا مجوز"}"
+                gmailStatus = AtlasText.of("دریافت ایمیل ناموفق بود: ${error.localizedMessage ?: "خطای شبکه یا مجوز"}", "Could not retrieve emails: ${error.localizedMessage ?: "network or permission error"}")
             } finally {
                 gmailLoading = false
             }
@@ -237,7 +237,7 @@ class MainActivity : ComponentActivity() {
                 gmailStatus = if (inbox.isEmpty()) {
                     AtlasText.of("اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد.", "Connected successfully; no inbox messages were found.")
                 } else {
-                    "اتصال موفق است؛ ${inbox.size} ایمیل دریافت شد."
+                    AtlasText.of("اتصال موفق است؛ ${inbox.size} ایمیل دریافت شد.", "Connected successfully; retrieved ${inbox.size} emails.")
                 }
                 val answer = if (inbox.isEmpty()) {
                     AtlasText.of("صندوق ورودی Gmail بررسی شد؛ ایمیل تازه‌ای برای نمایش پیدا نکردم.", "Gmail inbox checked; there are no recent messages to show.")
@@ -258,8 +258,8 @@ class MainActivity : ComponentActivity() {
                 onResult(answer)
             } catch (error: Exception) {
                 val detail = error.localizedMessage ?: AtlasText.of("خطای شبکه یا مجوز Google", "Network or Google permission error")
-                gmailStatus = "بررسی Gmail ناموفق بود: $detail"
-                onResult("نتوانستم ایمیل‌ها را بخوانم: $detail\nاگر مجوز منقضی شده یا لغو شده است، از بخش اتصال برنامه‌ها دوباره Gmail را متصل کن.")
+                gmailStatus = AtlasText.of("بررسی Gmail ناموفق بود: $detail", "Gmail check failed: $detail")
+                onResult(AtlasText.of("نتوانستم ایمیل‌ها را بخوانم: $detail\nاگر مجوز منقضی شده یا لغو شده است، از بخش اتصال برنامه‌ها دوباره Gmail را متصل کن.", "I couldn't read your emails: $detail\nIf permission expired or was revoked, reconnect Gmail from Connected apps."))
             } finally {
                 gmailLoading = false
             }
@@ -278,10 +278,10 @@ class MainActivity : ComponentActivity() {
         gmailAuthorizationLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             try {
                 if (result.resultCode != RESULT_OK) {
-                    throw IllegalStateException("پنجره مجوز Google بسته شد یا تأیید نشد (resultCode=${result.resultCode}).")
+                    throw IllegalStateException(AtlasText.of("پنجره مجوز Google بسته شد یا تأیید نشد (resultCode=${result.resultCode}).", "The Google permission window was closed or not approved (resultCode=${result.resultCode})."))
                 }
                 val data = result.data
-                    ?: throw IllegalStateException("Google نتیجه‌ای به برنامه برنگرداند (Intent خالی بود).")
+                    ?: throw IllegalStateException(AtlasText.of("Google نتیجه‌ای به برنامه برنگرداند (Intent خالی بود).", "Google returned no result to the app (empty intent)."))
                 val authorization = Identity.getAuthorizationClient(this).getAuthorizationResultFromIntent(data)
                 finishGmailAuthorization(authorization)
                 runPendingGmailAuthorizationAction()
@@ -410,7 +410,7 @@ private fun AtlasApp(
                 messages.add(
                     ChatMessage(
                         nextId++,
-                        "پیام شما در اطلس ذخیره شد؛ اما موتور هوش مصنوعی عمومی هنوز متصل نشده است. تا زمان تکمیل اتصال مدل، پاسخ‌گویی عمومی فعال نیست. قابلیت عملیاتی فعلی Gmail فقط پس از اتصال حساب قابل استفاده است.",
+                        AtlasText.of("پیام شما در اطلس ذخیره شد؛ اما موتور هوش مصنوعی عمومی هنوز متصل نشده است. تا زمان تکمیل اتصال مدل، پاسخ‌گویی عمومی فعال نیست. قابلیت عملیاتی فعلی Gmail فقط پس از اتصال حساب قابل استفاده است.", "Your message was saved in ATLAS, but the general AI engine is not connected yet. General answers will be available after the model connection is completed. The current Gmail feature works after you connect an account."),
                         false
                     )
                 )
@@ -675,7 +675,7 @@ private fun AtlasApp(
             title = { Text(AtlasText.of("وضعیت ATLAS AI", "ATLAS AI status")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("رابط اصلی Android: در حال توسعه")
+                    Text(AtlasText.of("رابط اصلی Android: در حال توسعه", "Android interface: in development"))
                     Text(AtlasText.of("زبان رابط فعلی: فارسی", "Current interface language: English"))
                     Text(AtlasText.of("هوش مصنوعی: هنوز متصل نشده", "AI engine: not connected yet"))
                     Text(AtlasText.of("دیتابیس و حساب آنلاین: هنوز متصل نشده", "Cloud database and account: not connected"))
@@ -794,7 +794,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
             Triple("◇", AtlasText.of("یادگیری و پژوهش", "Learning and research"), AtlasText.of("بررسی مرحله‌ای یک موضوع", "Explore a topic step by step"))
         ).forEach { option ->
             SuggestionCard(option.first, option.second, option.third) {
-                onPromptClick("در زمینه " + option.second + " به من کمک کن.")
+                onPromptClick(AtlasText.of("در زمینه " + option.second + " به من کمک کن.", "Help me with " + option.second + "."))
             }
             Spacer(Modifier.height(9.dp))
         }
@@ -1036,7 +1036,7 @@ private fun HistoryPage(
                         Spacer(Modifier.height(7.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                conversation.messageCount.toString() + " پیام",
+                                conversation.messageCount.toString() + AtlasText.of(" پیام", " messages"),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 10.sp
                             )
@@ -1088,7 +1088,7 @@ private fun HistoryPage(
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(AtlasText.of("حذف گفت‌وگو؟", "Delete conversation?")) },
-            text = { Text("«" + selected.title + "» و پیام‌های ذخیره‌شده آن از این دستگاه حذف می‌شوند.") },
+            text = { Text(AtlasText.of("«" + selected.title + "» و پیام‌های ذخیره‌شده آن از این دستگاه حذف می‌شوند.", "“" + selected.title + "” and its saved messages will be deleted from this device.")) },
             confirmButton = {
                 TextButton(onClick = {
                     onDeleteConversation(selected)
