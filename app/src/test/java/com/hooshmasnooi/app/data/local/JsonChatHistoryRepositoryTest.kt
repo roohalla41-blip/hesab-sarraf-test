@@ -66,9 +66,11 @@ class JsonChatHistoryRepositoryTest {
         repository.saveConversation(original)
         repository.saveMessage(original.id, ChatMessage(1L, "پیام اول", true))
 
-        repository.saveConversation(original.copy(title = "عنوان تازه", updatedAtEpochMillis = 20L))
+        repository.saveConversation(original.copy(title = "عنوان تازه", updatedAtEpochMillis = 5L))
 
         assertEquals("عنوان تازه", repository.getConversations().single().title)
+        assertEquals(10L, repository.getConversations().single().updatedAtEpochMillis)
+        assertEquals(1, repository.getConversations().single().messageCount)
         assertEquals(listOf("پیام اول"), repository.getMessages(original.id).map { it.text })
     }
 
