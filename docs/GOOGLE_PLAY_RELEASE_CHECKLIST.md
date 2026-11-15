@@ -6,7 +6,7 @@
 - [x] Package ID is `com.hooshmasnooi.app`.
 - [x] Adaptive launcher and monochrome icons are present.
 - [x] Cleartext network traffic is disabled.
-- [x] Main-branch GitHub Actions workflow runs Android unit tests and assembles a debug package on pushes.
+- [x] Manual GitHub Actions workflow exists for Android unit tests and debug-package assembly; it is not run automatically.
 - [x] Target API is Android 16 / API 36.
 - [ ] Run and review the latest CI result and resolve any failures.
 - [ ] Test on physical Android devices across supported screen sizes and Android versions.
