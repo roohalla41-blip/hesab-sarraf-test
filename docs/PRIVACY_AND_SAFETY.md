@@ -14,6 +14,7 @@
 - Each conversation retains at most 300 messages. When the limit is exceeded, the oldest messages are automatically removed and the newest 300 are retained.
 - This limit is a retention policy, not a cloud backup or cross-device synchronization feature.
 - The app retains one previous local conversation snapshot to recover from a malformed current snapshot. This is a limited local recovery copy, not a guaranteed backup; clearing app data or uninstalling the app can remove both copies.
+- When a conversation is explicitly cleared or deleted, its previous recovery snapshot is also removed so deleted message content is not intentionally retained for recovery.
 
 ## Account and session principles
 - Authentication is not implemented in the current scaffold.
