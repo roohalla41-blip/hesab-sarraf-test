@@ -3,6 +3,11 @@ package com.hooshmasnooi.app.data.local
 import android.app.Application
 import android.content.Context
 import com.hooshmasnooi.app.domain.model.ChatMessage
+import com.hooshmasnooi.app.core.AtlasText
+import com.hooshmasnooi.app.core.LocalePolicy
+import java.util.Locale
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -25,6 +30,40 @@ class ChatStorageTest {
             .edit()
             .clear()
             .commit()
+    }
+
+    @Test
+    fun localePolicyRecognizesPersianAndDariRightToLeft() {
+        assertTrue(LocalePolicy.isRightToLeft("fa-IR"))
+        assertTrue(LocalePolicy.isRightToLeft("prs-AF"))
+        assertTrue(LocalePolicy.isRightToLeft("ar"))
+        assertTrue(LocalePolicy.isRightToLeft("ur-PK"))
+        assertTrue(LocalePolicy.isRightToLeft("he"))
+    }
+
+    @Test
+    fun localePolicyKeepsEnglishAndUnknownLanguagesLeftToRight() {
+        assertFalse(LocalePolicy.isRightToLeft("en-US"))
+        assertFalse(LocalePolicy.isRightToLeft("de-DE"))
+        assertFalse(LocalePolicy.isRightToLeft(null))
+        assertEquals("en", LocalePolicy.normalizedLanguage(null))
+    }
+
+    @Test
+    fun atlasTextSelectsCopyFromDeviceLocale() {
+        val previous = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("fa-IR"))
+            assertEquals("فارسی", AtlasText.of("فارسی", "English"))
+
+            Locale.setDefault(Locale.forLanguageTag("prs-AF"))
+            assertEquals("دری", AtlasText.of("دری", "English"))
+
+            Locale.setDefault(Locale.forLanguageTag("en-US"))
+            assertEquals("English", AtlasText.of("فارسی", "English"))
+        } finally {
+            Locale.setDefault(previous)
+        }
     }
 
     @Test
