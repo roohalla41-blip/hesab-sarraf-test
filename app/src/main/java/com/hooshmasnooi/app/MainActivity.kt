@@ -532,7 +532,7 @@ private fun AtlasApp(
                         Column(Modifier.padding(13.dp)) {
                             Text(AtlasText.of("وضعیت نسخه", "Build status"), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                             Spacer(Modifier.height(4.dp))
-                            Text(AtlasText.of("نسخه 0.1.0 • امکانات در حال تکمیل هستند.", "Version 0.1.0 • Features are being completed."), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(AtlasText.of("موتور گفت‌وگو متصل است • ابزارهای دیگر به سرویس جداگانه نیاز دارند.", "Version 0.1.0 • Features are being completed."), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
                 }
@@ -613,7 +613,7 @@ private fun AtlasApp(
                             }
                         }
                         Text(
-                            AtlasText.of("برای بررسی ایمیل، Gmail را از بخش «اتصال برنامه‌ها» وصل کن؛ سپس در همین گفت‌وگو بنویس «ایمیل‌های جدیدم را بررسی کن».", "To check email, connect Gmail in Connected apps, then type “check my recent emails” in this chat."),
+                            AtlasText.of("پاسخ‌های گفت‌وگو از طریق سرویس آنلاین اطلس دریافت می‌شوند.", "To check email, connect Gmail in Connected apps, then type “check my recent emails” in this chat."),
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -790,7 +790,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
                     Text(AtlasText.of("برخی ابزارها هنوز به سرویس واقعی متصل نیستند", "Some tools are not connected to live services yet"),
                         color = Color(0xFF91A5BF), fontSize = 10.sp)
                 }
-                Text("۰.۱", color = Color(0xFFB8E9E2), fontSize = 11.sp,
+                Text("AI", color = Color(0xFFB8E9E2), fontSize = 11.sp,
                     fontWeight = FontWeight.Bold)
             }
         }
@@ -835,7 +835,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
             }
             Spacer(Modifier.height(9.dp))
         }
-        Text(AtlasText.of("قابلیت‌هایی که سرویس اختصاصی آن‌ها هنوز متصل نشده است، در حال توسعه هستند.", "Features that require dedicated services are still in development."),
+        Text(AtlasText.of("قابلیت‌هایی که به سرویس اختصاصی نیاز دارند، پس از اتصال در دسترس قرار می‌گیرند.", "Features that require dedicated services are still in development."),
             color = Color(0xFF8195AE), fontSize = 10.sp,
             modifier = Modifier.padding(top = 7.dp, bottom = 12.dp))
     }
@@ -1188,7 +1188,7 @@ private fun FeaturePage(
             InfoCard(feature.first, feature.second)
             Spacer(Modifier.height(10.dp))
         }
-        Text(AtlasText.of("این بخش در مرحله ساختار است و قابلیت عملیاتی آن هنوز فعال نشده است.", "This section is a structure preview; its functionality is not active yet."),
+        Text(AtlasText.of("قابلیت‌های این بخش به‌تدریج و پس از اتصال سرویس‌های مربوطه فعال می‌شوند.", "This section is a structure preview; its functionality is not active yet."),
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
     }
 }
