@@ -54,3 +54,9 @@
 - [اتصال سرویس‌ها](docs/INTEGRATIONS.md)
 - [امنیت و حریم خصوصی](docs/PRIVACY_AND_SAFETY.md)
 - [چک‌لیست انتشار Google Play](docs/GOOGLE_PLAY_RELEASE_CHECKLIST.md)
+
+
+## انتشار نسخه وب با GitHub Pages
+- فایل ریشه `index.html` اکنون به `preview/` هدایت می‌کند.
+- برای نمایش همین نسخه از شاخه اصلی، در تنظیمات مخزن به Settings → Pages برو و منبع را روی Deploy from a branch، شاخه `main` و پوشه `/(root)` قرار بده.
+- تغییر تنظیم Pages از طریق اتصال فعلی GitHub در این گفت‌وگو در دسترس نبود؛ تا تغییر این تنظیم، وب‌سایت ممکن است نسخه شاخه قبلی را نمایش دهد.
