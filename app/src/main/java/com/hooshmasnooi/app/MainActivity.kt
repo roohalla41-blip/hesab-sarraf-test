@@ -63,6 +63,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -744,7 +745,7 @@ private fun IntegrationsPage(
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFF294B59), modifier = Modifier.size(46.dp)) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Filled.Hub, contentDescription = null, tint = Color(0xFF83E2D2), modifier = Modifier.size(25.dp))
+                        Icon(Icons.Filled.AutoAwesome, contentDescription = null, tint = Color(0xFF83E2D2), modifier = Modifier.size(25.dp))
                     }
                 }
                 Spacer(Modifier.width(12.dp))
