@@ -66,6 +66,45 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
             }
         }
 
+    override suspend fun saveConversationAndMessage(
+        conversation: Conversation,
+        message: ChatMessage
+    ) = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            val root = readRoot()
+            val items = root.optJSONArray(KEY_CONVERSATIONS) ?: JSONArray()
+            val index = findIndex(items, conversation.id)
+            val stored = if (index >= 0) {
+                items.getJSONObject(index).also { existing ->
+                    existing.put("title", conversation.title.take(MAX_TITLE_CHARS))
+                    existing.put("createdAtEpochMillis", conversation.createdAtEpochMillis)
+                    existing.put("isPinned", conversation.isPinned)
+                }
+            } else {
+                conversation.toJson().put(KEY_MESSAGES, JSONArray())
+            }
+            val messages = stored.optJSONArray(KEY_MESSAGES) ?: JSONArray()
+            val duplicate = (0 until messages.length()).any {
+                messages.optJSONObject(it)?.optLong("id") == message.id
+            }
+            if (!duplicate) {
+                messages.put(message.toJson())
+                while (messages.length() > MAX_MESSAGES_PER_CONVERSATION) {
+                    messages.remove(0)
+                }
+            }
+            stored.put(KEY_MESSAGES, messages)
+            stored.put("messageCount", messages.length())
+            stored.put(
+                "updatedAtEpochMillis",
+                maxOf(conversation.updatedAtEpochMillis, System.currentTimeMillis())
+            )
+            if (index >= 0) items.put(index, stored) else items.put(stored)
+            root.put(KEY_CONVERSATIONS, trimConversations(items))
+            writeRoot(root)
+        }
+    }
+
     override suspend fun saveMessage(conversationId: String, message: ChatMessage) =
         withContext(Dispatchers.IO) {
             mutex.withLock {
