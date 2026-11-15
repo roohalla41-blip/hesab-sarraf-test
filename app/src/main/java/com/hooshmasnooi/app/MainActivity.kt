@@ -896,7 +896,42 @@ private fun IntegrationsPage(
                     Text(AtlasText.of("اتصال‌های حساب", "Account connections"), color = Color.White, fontWeight = FontWeight.Bold)
                     Text(AtlasText.of("دسترسی‌ها فقط با اجازه شما فعال می‌شوند.", "Access is enabled only with your permission."), color = Color(0xFFB5C6D8), fontSize = 11.sp)
                 }
-                Text(AtlasText.of("۰۱ فعال", "01 active"), color = Color(0xFF83E2D2), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(if (gmailConnected) AtlasText.of("۰۱ فعال", "01 active") else AtlasText.of("۰۰ فعال", "00 active"),
+                    color = if (gmailConnected) Color(0xFF83E2D2) else Color(0xFFB5C6D8),
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFFE8E5FF), modifier = Modifier.size(42.dp)) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = null,
+                                tint = Color(0xFF5148B8), modifier = Modifier.size(23.dp))
+                        }
+                    }
+                    Spacer(Modifier.width(11.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(AtlasText.of("موتور هوش مصنوعی اطلس", "ATLAS AI engine"), fontWeight = FontWeight.Bold)
+                        Text(AtlasText.of("مسیر چندارائه‌دهنده آماده‌سازی شده", "Multi-provider routing prepared"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    }
+                    Text(AtlasText.of("غیرفعال", "Inactive"), color = MaterialTheme.colorScheme.error,
+                        fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(10.dp))
+                Text("Z.AI  •  Cloudflare Workers AI  •  OpenAI-compatible",
+                    fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    AtlasText.of(
+                        "کد سمت سرور برای جابه‌جایی بین ارائه‌دهندگان آماده است؛ اما تا تعیین پروژه مستقل، روش ورود کاربر و آزمایش واقعی، چت عمومی فعال نمی‌شود.",
+                        "Server-side provider fallback is prepared. General chat stays disabled until the independent project, user sign-in, and live tests are completed."
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
         Spacer(Modifier.height(16.dp))
@@ -915,7 +950,7 @@ private fun IntegrationsPage(
                         Text("Google Gmail", fontWeight = FontWeight.Bold)
                         Text(AtlasText.of("خواندن ایمیل‌ها • مجوز فقط‌خواندنی", "Read emails • read-only permission"), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
-                    Surface(shape = RoundedCornerShape(20.dp), color = if (gmailMessages.isNotEmpty()) Color(0xFFDDF5E9) else Color(0xFFFFF0D8)) {
+                    Surface(shape = RoundedCornerShape(20.dp), color = if (gmailConnected) Color(0xFFDDF5E9) else Color(0xFFFFF0D8)) {
                         Text(if (gmailConnected) AtlasText.of("متصل", "Connected") else AtlasText.of("نیازمند اتصال", "Not connected"),
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                             color = if (gmailConnected) Color(0xFF176B45) else Color(0xFF8A5B14),
