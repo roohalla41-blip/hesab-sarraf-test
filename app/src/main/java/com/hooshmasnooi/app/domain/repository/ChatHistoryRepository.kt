@@ -10,4 +10,5 @@ interface ChatHistoryRepository {
     suspend fun saveConversation(conversation: Conversation)
     suspend fun saveMessage(conversationId: String, message: ChatMessage)
     suspend fun deleteConversation(conversationId: String)
+    suspend fun deleteAllConversations()
 }
