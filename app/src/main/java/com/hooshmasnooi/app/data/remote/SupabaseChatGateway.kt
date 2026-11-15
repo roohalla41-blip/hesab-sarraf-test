@@ -88,11 +88,19 @@ class SupabaseChatGateway(
             if (status == 429) {
                 return@withContext AiGatewayResult.Failure(AiFailure.RATE_LIMITED)
             }
-            if (status >= 500) {
-                return@withContext AiGatewayResult.Failure(AiFailure.SERVER)
-            }
             if (status !in 200..299) {
-                return@withContext AiGatewayResult.Failure(AiFailure.INVALID_RESPONSE)
+                val errorBody = runCatching {
+                    connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                }.getOrDefault("")
+                val errorCode = runCatching {
+                    JSONObject(errorBody).optJSONObject("error")?.optString("code").orEmpty()
+                }.getOrDefault("")
+                val failure = when {
+                    errorCode == "AI_NOT_CONFIGURED" -> AiFailure.NOT_CONFIGURED
+                    status >= 500 -> AiFailure.SERVER
+                    else -> AiFailure.INVALID_RESPONSE
+                }
+                return@withContext AiGatewayResult.Failure(failure)
             }
 
             val responseText = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
@@ -103,8 +111,12 @@ class SupabaseChatGateway(
             } else {
                 AiGatewayResult.Success(answer)
             }
-        } catch (_: Exception) {
+        } catch (_: java.net.SocketTimeoutException) {
             AiGatewayResult.Failure(AiFailure.NETWORK)
+        } catch (_: java.io.IOException) {
+            AiGatewayResult.Failure(AiFailure.NETWORK)
+        } catch (_: Exception) {
+            AiGatewayResult.Failure(AiFailure.INVALID_RESPONSE)
         } finally {
             connection?.disconnect()
         }
