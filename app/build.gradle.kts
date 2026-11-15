@@ -25,6 +25,23 @@ android {
         jvmTarget = "17"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = System.getenv("ATLAS_UPLOAD_STORE_FILE")?.let { file(it) }
+                ?: file("$buildDir/atlas-upload-key-not-configured.jks")
+            storePassword = System.getenv("ATLAS_UPLOAD_STORE_PASSWORD") ?: ""
+            keyAlias = System.getenv("ATLAS_UPLOAD_KEY_ALIAS") ?: ""
+            keyPassword = System.getenv("ATLAS_UPLOAD_KEY_PASSWORD") ?: ""
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
