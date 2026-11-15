@@ -8,7 +8,7 @@
 - [x] Cleartext network traffic is disabled.
 - [x] CI validates Android tests and package assembly.
 - [x] Target API updated to Android 16 / API 36 for new-app submission policy.
-- [ ] Re-run the full build after the API 36 toolchain upgrade.
+- [ ] Re-run the full build after the API 36 toolchain upgrade and latest UI/release-signing changes.
 - [ ] Test on physical Android devices across supported screen sizes and Android versions.
 - [ ] Complete release build configuration, code shrinking review, and crash-free startup checks.
 - [ ] Increment versionCode for the first release and every subsequent update.
@@ -18,7 +18,9 @@ https://support.google.com/googleplay/android-developer/answer/11926878
 
 ## 2. Signing and Android App Bundle
 - [ ] Create and securely back up a dedicated upload keystore outside the Git repository.
-- [ ] Configure release signing from protected CI secrets; never commit the keystore or passwords.
+- [x] Add a manual signed-AAB validation workflow that reads signing material only from protected GitHub Actions secrets and does not publish artifacts.
+- [ ] Create a dedicated upload keystore and add these repository secrets: `ATLAS_UPLOAD_KEYSTORE_BASE64`, `ATLAS_UPLOAD_STORE_PASSWORD`, `ATLAS_UPLOAD_KEY_ALIAS`, and `ATLAS_UPLOAD_KEY_PASSWORD`.
+- [ ] Run the signed-AAB validation workflow after the secrets are configured; never commit the keystore or passwords.
 - [ ] Generate a signed Android App Bundle (.aab), not a debug APK.
 - [ ] Enroll in Play App Signing and register the upload certificate.
 - [ ] Add the correct release/upload certificate SHA-1 to the Google OAuth Android client if Gmail remains in the release.
