@@ -2,19 +2,19 @@
 
 ## Product areas and actual status
 1. **Chat:** Compose UI is present. Messages are stored locally; no AI model is connected.
-2. **History:** JSON-backed local conversation list, restore, bounded retention, single delete, and clear-all delete are wired to Android UI.
+2. **History:** AES-256-GCM encrypted local conversation history, verified legacy migration, bounded retention, restore, single delete, and clear-all delete are wired to Android UI.
 3. **Explore:** assistant modes are presentation-only.
 4. **Tools:** file, image, web research, and coding tools are not implemented.
 5. **Voice:** speech input/output is not implemented.
 6. **Account and plans:** Google sign-in, guest identity, server quotas, subscriptions, and billing are not implemented.
 7. **Settings:** light/dark themes are implemented and persisted locally; language choice is stored as a preference only, while full localization and system-language switching are not complete.
-8. **Privacy:** local-history controls are present; application-level encryption and data export are not implemented.
+8. **Privacy:** local-history controls and Android Keystore-backed encryption are implemented; data export is not implemented.
 
 ## Architecture boundaries
 - **app/core:** app-wide configuration.
 - **domain/model:** provider-independent models.
 - **domain/repository:** history and account contracts.
-- **data/local:** JSON history in Android private internal storage.
+- **data/local:** encrypted JSON history in Android private internal storage, with Android Keystore key management.
 - **data/remote:** reserved for an authenticated ATLAS API; currently not connected.
 - **feature:** UI areas and state.
 
@@ -27,13 +27,13 @@
 - No Supabase schema, auth provider, secrets, users, or Edge Functions are changed by this branch work.
 
 ## Local data protection
-- Current history is a bounded JSON file in Android private internal storage, without application-level encryption.
+- Current history is a bounded JSON payload encrypted with AES-256-GCM and stored in Android private internal storage. Its 256-bit non-exportable key is managed by Android Keystore.
 - It keeps up to 40 conversations and 300 messages per conversation. When the message cap is exceeded, the oldest message IDs are trimmed automatically.
 - Conversation metadata and message append are persisted in one mutex-protected write; retained messages are ordered by monotonically increasing message ID so concurrent appends preserve the newest 300.
-- If the main JSON is malformed, one recovery copy is preserved in private app storage.
-- Clear-all writes an empty history before removing the recovery copy.
+- Legacy plaintext JSON is migrated to a separate encrypted file and removed only after decrypt-and-compare verification. Malformed legacy data and any pre-existing legacy recovery copy are preserved in encrypted recovery files.
+- Clear-all writes an empty encrypted history before removing encrypted recovery copies.
 - Local deletion, cloud account deletion, and provider retention are separate lifecycle concerns.
-- Application-level encryption needs a versioned, interruption-safe migration using an Android Keystore-protected AES-GCM key; this is not implemented.
+- The encrypted file has a format marker/version and nonce. Missing keys or authentication failures fail closed; history is not silently reset. Android Keystore and migration still require physical-device validation.
 
 ## Release blockers
 - Google Sign-In for app account authentication.
