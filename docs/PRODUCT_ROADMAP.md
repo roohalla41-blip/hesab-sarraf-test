@@ -30,7 +30,8 @@
 ## AI engine and backend (separate authorization required)
 - [ ] Confirm the independent ATLAS backend destination and data boundaries
 - [ ] Select provider/model routing and configure server-side secrets
-- [x] Add authenticated Android HTTP adapter boundary (not yet wired)\n- [ ] Connect Android client to authenticated server API
+- [x] Add authenticated Android HTTP adapter boundary (not yet wired)
+- [ ] Connect Android client to authenticated server API
 - [ ] Implement atomic quota, rate limiting, and abuse controls
 - [ ] Add streaming responses, cancellation, and retry behavior
 - [ ] Add account lifecycle, cloud sync, export, and deletion
