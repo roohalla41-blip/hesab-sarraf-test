@@ -325,6 +325,7 @@ class MainActivity : ComponentActivity() {
                         gmailStatus = gmailStatus,
                         gmailMessages = gmailMessages,
                         gmailLoading = gmailLoading,
+                        gmailConnected = gmailConnected,
                         onConnectGmail = { connectGmail() },
                         onRefreshGmail = { loadRecentGmail() },
                         onDisconnectGmail = { disconnectGmail() },
@@ -633,7 +634,7 @@ private fun AtlasApp(
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "integrations" -> IntegrationsPage(
-                    gmailStatus, gmailMessages, gmailLoading, gmailConnected,
+                    gmailStatus, gmailMessages, gmailLoading, gmailConnected, gmailConnected,
                     onConnectGmail, onRefreshGmail, onDisconnectGmail,
                     Modifier.fillMaxSize().padding(padding)
                 )
