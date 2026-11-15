@@ -88,8 +88,9 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                 messages.optJSONObject(it)?.optLong("id") == message.id
             }
             if (!duplicate) messages.put(message.toJson())
-            stored.put(KEY_MESSAGES, trimMessages(messages))
-            stored.put("messageCount", messages.length())
+            val retainedMessages = trimMessages(messages)
+            stored.put(KEY_MESSAGES, retainedMessages)
+            stored.put("messageCount", retainedMessages.length())
             stored.put(
                 "updatedAtEpochMillis",
                 maxOf(conversation.updatedAtEpochMillis, System.currentTimeMillis())
@@ -115,8 +116,9 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                     }) return@withLock
 
                 messages.put(message.toJson())
-                conversation.put(KEY_MESSAGES, trimMessages(messages))
-                conversation.put("messageCount", messages.length())
+                val retainedMessages = trimMessages(messages)
+                conversation.put(KEY_MESSAGES, retainedMessages)
+                conversation.put("messageCount", retainedMessages.length())
                 conversation.put("updatedAtEpochMillis", System.currentTimeMillis())
                 items.put(index, conversation)
                 root.put(KEY_CONVERSATIONS, items)
