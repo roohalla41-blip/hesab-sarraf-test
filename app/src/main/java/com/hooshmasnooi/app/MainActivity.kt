@@ -63,6 +63,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -362,28 +364,77 @@ private fun AtlasApp(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Column(Modifier.padding(16.dp)) {
-                    Text("ATLAS AI", fontWeight = FontWeight.Bold, fontSize = 21.sp)
-                    Text("هوشمندی بدون مرز", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(20.dp))
+                Column(
+                    Modifier.fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 14.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color(0xFF172B43)
+                    ) {
+                        Column(Modifier.padding(18.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    modifier = Modifier.size(46.dp),
+                                    shape = RoundedCornerShape(15.dp),
+                                    color = Color(0xFF294B68)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text("✦", color = Color(0xFF8B83FF), fontSize = 25.sp)
+                                    }
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column {
+                                    Text("ATLAS AI", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
+                                    Text("هوشمندی بدون مرز", color = Color(0xFFB8C8DC), fontSize = 11.sp)
+                                }
+                            }
+                            Spacer(Modifier.height(15.dp))
+                            Text("دستیار هوشمند چندسرویس", color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold)
+                            Text("نسخه اولیه • در حال توسعه", color = Color(0xFF9FB4CC), fontSize = 11.sp)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
                     atlasPages.forEach { page ->
+                        when (page.id) {
+                            "chat" -> Text("فضای کاری", modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 3.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                            "integrations" -> Text("اتصال و حساب", modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 3.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                            "settings" -> Text("تنظیمات و پشتیبانی", modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 3.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                        }
                         NavigationDrawerItem(
-                            label = { Text(page.title) },
+                            label = { Text(page.title, fontWeight = if (currentPage == page.id) FontWeight.SemiBold else FontWeight.Normal) },
                             icon = { Text(page.symbol, fontSize = 18.sp) },
                             selected = currentPage == page.id,
                             onClick = {
                                 currentPage = page.id
                                 scope.launch { drawerState.close() }
                             },
-                            modifier = Modifier.padding(vertical = 2.dp)
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = Color(0xFF253B59),
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                selectedIconColor = MaterialTheme.colorScheme.primary
+                            )
                         )
                     }
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        "گفت‌وگوی ذخیره‌شده در فضای برنامه",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Spacer(Modifier.height(12.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+                    ) {
+                        Column(Modifier.padding(13.dp)) {
+                            Text("وضعیت نسخه", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Spacer(Modifier.height(4.dp))
+                            Text("نسخه 0.1.0 • امکانات در حال تکمیل هستند.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                        }
+                    }
                 }
             }
         }
@@ -862,11 +913,37 @@ private fun FeaturePage(
 @Composable
 private fun ProfilePage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("حساب کاربری", "نمایش ساختار حساب؛ ثبت‌نام آنلاین هنوز پیاده‌سازی نشده است.")
-        InfoCard("کاربر مهمان", "بدون ورود • حساب ابری ایجاد نشده")
-        InfoCard("اطلاعات پروفایل", "نام نمایشی، تصویر و مشخصات حساب در مرحله بعد")
-        InfoCard("ورود و امنیت", "مدیریت نشست و احراز هویت پس از انتخاب سرویس امن")
-        InfoCard("داده‌های من", "دریافت و حذف داده‌ها پس از طراحی ذخیره‌سازی")
+        PageTitle("حساب کاربری", "مدیریت هویت، نشست و اطلاعات شخصی در یک مکان.")
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            color = Color(0xFF172B43)
+        ) {
+            Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = Color(0xFF294B68), modifier = Modifier.size(58.dp)) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("م", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+                    }
+                }
+                Spacer(Modifier.width(14.dp))
+                Column {
+                    Text("حساب مهمان", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text("ذخیره‌سازی گفتگوها روی همین دستگاه", color = Color(0xFFB8C8DC), fontSize = 11.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Text("ورود آنلاین هنوز فعال نشده", color = Color(0xFF83E2D2), fontSize = 10.sp)
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Text("مدیریت حساب", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Spacer(Modifier.height(8.dp))
+        InfoCard("اطلاعات نمایه", "نام نمایشی و تصویر حساب پس از راه‌اندازی حساب امن قابل تنظیم خواهد بود.")
+        Spacer(Modifier.height(8.dp))
+        InfoCard("امنیت و نشست‌ها", "ورود، خروج و مدیریت نشست‌ها هنوز پیاده‌سازی نشده‌اند.")
+        Spacer(Modifier.height(8.dp))
+        InfoCard("داده‌ها و حریم خصوصی", "گفتگوهای فعلی در فضای خصوصی برنامه ذخیره می‌شوند؛ ابزار خروجی‌گرفتن و حذف کامل داده‌ها در دست توسعه است.")
+        Spacer(Modifier.height(8.dp))
+        InfoCard("همگام‌سازی ابری", "فعلاً غیرفعال است؛ اطلاعات دستگاه به سرور ارسال نمی‌شود.")
     }
 }
 
