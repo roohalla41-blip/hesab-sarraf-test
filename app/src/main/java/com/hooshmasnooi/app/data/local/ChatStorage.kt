@@ -164,7 +164,7 @@ object ChatStorage {
 
     fun deleteConversation(context: Context, conversationId: String) {
         val all = loadAll(context).filterNot { it.id == conversationId }
-        saveAll(context, all)
+        saveAll(context, all, keepPreviousSnapshot = false)
         val activeId = preferences(context).getString(KEY_ACTIVE_CONVERSATION, null)
         if (activeId == conversationId) {
             if (all.isNotEmpty()) {
@@ -176,8 +176,16 @@ object ChatStorage {
     }
 
     fun clear(context: Context) {
-        val activeId = preferences(context).getString(KEY_ACTIVE_CONVERSATION, null)
-        if (activeId != null) save(context, emptyList(), activeId)
+        val activeId = preferences(context).getString(KEY_ACTIVE_CONVERSATION, null) ?: return
+        val now = System.currentTimeMillis()
+        val cleared = loadAll(context).map { conversation ->
+            if (conversation.id == activeId) {
+                conversation.copy(messages = emptyList(), updatedAtEpochMillis = now)
+            } else {
+                conversation
+            }
+        }
+        saveAll(context, cleared, keepPreviousSnapshot = false)
     }
 
     private fun titleFor(messages: List<ChatMessage>): String {
@@ -206,7 +214,11 @@ object ChatStorage {
         }
     }
 
-    private fun saveAll(context: Context, conversations: List<StoredConversation>) {
+    private fun saveAll(
+        context: Context,
+        conversations: List<StoredConversation>,
+        keepPreviousSnapshot: Boolean = true
+    ) {
         val array = JSONArray()
         conversations.take(MAX_CONVERSATIONS).forEach { conversation ->
             val messages = JSONArray()
@@ -231,9 +243,14 @@ object ChatStorage {
         val previousSnapshot = prefs.getString(KEY_CONVERSATIONS, null)
         val nextSnapshot = array.toString()
         val editor = prefs.edit()
-        if (!previousSnapshot.isNullOrBlank() && previousSnapshot != nextSnapshot) {
-            // Keep one previous snapshot so a partial/corrupt write can be recovered.
-            editor.putString(KEY_CONVERSATIONS_BACKUP, previousSnapshot)
+        if (keepPreviousSnapshot) {
+            if (!previousSnapshot.isNullOrBlank() && previousSnapshot != nextSnapshot) {
+                // Keep one previous snapshot so a partial/corrupt write can be recovered.
+                editor.putString(KEY_CONVERSATIONS_BACKUP, previousSnapshot)
+            }
+        } else {
+            // Explicit deletion/clear must not leave recoverable copies of deleted messages.
+            editor.remove(KEY_CONVERSATIONS_BACKUP)
         }
         editor.putString(KEY_CONVERSATIONS, nextSnapshot).commit()
     }
