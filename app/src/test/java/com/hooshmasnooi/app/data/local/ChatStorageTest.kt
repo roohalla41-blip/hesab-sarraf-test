@@ -139,6 +139,33 @@ class ChatStorageTest {
     }
 
     @Test
+    fun clearingOrDeletingHistoryAlsoRemovesRecoveryCopy() {
+        val preferences = context.getSharedPreferences("atlas_private_chat", Context.MODE_PRIVATE)
+        val conversation = ChatStorage.createConversation(context)
+        ChatStorage.save(context, listOf(ChatMessage(1L, "private text", true)), conversation.id)
+        ChatStorage.save(
+            context,
+            listOf(ChatMessage(1L, "private text", true), ChatMessage(2L, "new text", true)),
+            conversation.id
+        )
+        assertEquals(true, preferences.contains("conversations_v2_backup"))
+
+        ChatStorage.clear(context)
+        assertEquals(emptyList<ChatMessage>(), ChatStorage.loadConversation(context, conversation.id))
+        assertEquals(false, preferences.contains("conversations_v2_backup"))
+
+        val second = ChatStorage.createConversation(context)
+        ChatStorage.save(context, listOf(ChatMessage(3L, "delete me", true)), second.id)
+        ChatStorage.save(
+            context,
+            listOf(ChatMessage(3L, "delete me", true), ChatMessage(4L, "newer", true)),
+            second.id
+        )
+        ChatStorage.deleteConversation(context, second.id)
+        assertEquals(false, preferences.contains("conversations_v2_backup"))
+    }
+
+    @Test
     fun migratingLegacyHistoryKeepsNewestThreeHundredMessages() {
         val messages = JSONArray()
         (1L..350L).forEach { id ->
