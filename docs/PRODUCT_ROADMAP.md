@@ -13,11 +13,13 @@
 - [x] Branded navigation drawer with grouped destinations
 - [x] Guest profile screen with local-data disclosures
 - [x] Persistent light/dark appearance preference
-- [x] Local persistence for the active conversation
-- [x] Gmail read-only authorization and API source path (device verification pending)
-- [ ] Multiple independent conversations, rename/delete/search
-- [ ] Complete resource-based localization and device-language policy
+- [x] Multiple local conversations: create, open, continue, and delete with confirmation
+- [x] Migration from the previous single-conversation local store
+- [x] Local persistence for messages and conversation titles
+- [x] Explicit user-facing state when the general AI engine is not connected
+- [ ] Rename and search conversations
 - [ ] Full chat actions: copy, edit/resend, regenerate, stop, share, and feedback
+- [ ] Complete resource-based localization and device-language policy
 - [ ] Attachment picker and secure local staging
 - [ ] Accessibility and responsive-layout review
 - [ ] UI tests and device-level review
