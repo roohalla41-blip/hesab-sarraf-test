@@ -98,6 +98,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hooshmasnooi.app.domain.model.ChatMessage
+import com.hooshmasnooi.app.core.AtlasText
+import com.hooshmasnooi.app.core.LocalePolicy
 import com.hooshmasnooi.app.data.local.ChatStorage
 import com.hooshmasnooi.app.data.local.StoredConversation
 
@@ -111,22 +113,22 @@ private fun isGmailCheckRequest(text: String): Boolean {
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
 
 private val atlasPages = listOf(
-    AtlasPage("chat", "گفت‌وگو", "✦"),
-    AtlasPage("history", "تاریخچه", "◷"),
-    AtlasPage("explore", "کاوش دستیارها", "◇"),
-    AtlasPage("tools", "ابزارها", "⌘"),
-    AtlasPage("integrations", "اتصال برنامه‌ها", "⇄"),
-    AtlasPage("profile", "حساب کاربری", "◎"),
-    AtlasPage("plans", "طرح‌های اشتراک", "♧"),
-    AtlasPage("settings", "تنظیمات", "⚙"),
-    AtlasPage("privacy", "حریم خصوصی و امنیت", "▣"),
-    AtlasPage("help", "راهنما و پشتیبانی", "?")
+    AtlasPage("chat", AtlasText.of("گفت‌وگو", "Chat"), "✦"),
+    AtlasPage("history", AtlasText.of("تاریخچه", "History"), "◷"),
+    AtlasPage("explore", AtlasText.of("کاوش دستیارها", "Explore assistants"), "◇"),
+    AtlasPage("tools", AtlasText.of("ابزارها", "Tools"), "⌘"),
+    AtlasPage("integrations", AtlasText.of("اتصال برنامه‌ها", "Connected apps"), "⇄"),
+    AtlasPage("profile", AtlasText.of("حساب کاربری", "Account"), "◎"),
+    AtlasPage("plans", AtlasText.of("طرح‌های اشتراک", "Plans"), "♧"),
+    AtlasPage("settings", AtlasText.of("تنظیمات", "Settings"), "⚙"),
+    AtlasPage("privacy", AtlasText.of("حریم خصوصی و امنیت", "Privacy & security"), "▣"),
+    AtlasPage("help", AtlasText.of("راهنما و پشتیبانی", "Help & support"), "?")
 )
 
 class MainActivity : ComponentActivity() {
     private lateinit var gmailAuthorizationLauncher: ActivityResultLauncher<IntentSenderRequest>
     private val gmailScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    var gmailStatus by mutableStateOf("حساب Gmail هنوز متصل نشده است.")
+    var gmailStatus by mutableStateOf(AtlasText.of("حساب Gmail هنوز متصل نشده است.", "Gmail is not connected yet."))
         private set
     var gmailMessages by mutableStateOf<List<String>>(emptyList())
         private set
@@ -140,14 +142,14 @@ class MainActivity : ComponentActivity() {
 
     fun connectGmail(afterAuthorization: (() -> Unit)? = null) {
         pendingGmailAuthorizationAction = afterAuthorization ?: { loadRecentGmail() }
-        gmailStatus = "در حال درخواست اجازه از Google..."
+        gmailStatus = AtlasText.of("در حال درخواست اجازه از Google...", "Requesting permission from Google...")
         val request = AuthorizationRequest.builder()
             .setRequestedScopes(listOf(Scope("https://www.googleapis.com/auth/gmail.readonly")))
             .build()
         Identity.getAuthorizationClient(this).authorize(request)
             .addOnSuccessListener { result ->
                 if (result.hasResolution() && result.pendingIntent != null) {
-                    gmailStatus = "حساب انتخاب شد؛ در انتظار تأیید مجوز Gmail از Google..."
+                    gmailStatus = AtlasText.of("حساب انتخاب شد؛ در انتظار تأیید مجوز Gmail از Google...", "Account selected; waiting for Gmail permission approval...")
                     gmailAuthorizationLauncher.launch(
                         IntentSenderRequest.Builder(result.pendingIntent!!.intentSender).build()
                     )
@@ -174,7 +176,7 @@ class MainActivity : ComponentActivity() {
         }
         gmailAccessToken = token
         gmailConnected = true
-        gmailStatus = "مجوز Gmail با موفقیت دریافت شد."
+        gmailStatus = AtlasText.of("مجوز Gmail با موفقیت دریافت شد.", "Gmail permission granted successfully.")
     }
 
     private fun runPendingGmailAuthorizationAction() {
@@ -196,15 +198,15 @@ class MainActivity : ComponentActivity() {
     fun loadRecentGmail() {
         val token = gmailAccessToken
         if (token.isNullOrBlank()) {
-            gmailStatus = "ابتدا حساب Gmail را متصل کن."
+            gmailStatus = AtlasText.of("ابتدا حساب Gmail را متصل کن.", "Connect a Gmail account first.")
             return
         }
         gmailLoading = true
-        gmailStatus = "در حال دریافت ایمیل‌های اخیر..."
+        gmailStatus = AtlasText.of("در حال دریافت ایمیل‌های اخیر...", "Fetching recent emails...")
         gmailScope.launch {
             try {
                 gmailMessages = GmailApi.latestInbox(token)
-                gmailStatus = if (gmailMessages.isEmpty()) "اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد."
+                gmailStatus = if (gmailMessages.isEmpty()) AtlasText.of("اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد.", "Connected successfully; no inbox messages were found.")
                     else "اتصال موفق است؛ ${gmailMessages.size} ایمیل اخیر دریافت شد."
             } catch (error: Exception) {
                 gmailStatus = "دریافت ایمیل ناموفق بود: ${error.localizedMessage ?: "خطای شبکه یا مجوز"}"
@@ -218,7 +220,7 @@ class MainActivity : ComponentActivity() {
         val token = gmailAccessToken
         if (token.isNullOrBlank()) {
             pendingGmailChatResult = onResult
-            gmailStatus = "در حال بازیابی مجوز Gmail برای بررسی ایمیل‌ها..."
+            gmailStatus = AtlasText.of("در حال بازیابی مجوز Gmail برای بررسی ایمیل‌ها...", "Restoring Gmail permission to check messages...")
             connectGmail {
                 val callback = pendingGmailChatResult
                 pendingGmailChatResult = null
@@ -227,35 +229,35 @@ class MainActivity : ComponentActivity() {
             return
         }
         gmailLoading = true
-        gmailStatus = "در حال بررسی Gmail از داخل گفت‌وگو..."
+        gmailStatus = AtlasText.of("در حال بررسی Gmail از داخل گفت‌وگو...", "Checking Gmail from chat...")
         gmailScope.launch {
             try {
                 val inbox = GmailApi.latestInbox(token)
                 gmailMessages = inbox
                 gmailStatus = if (inbox.isEmpty()) {
-                    "اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد."
+                    AtlasText.of("اتصال موفق است؛ ایمیلی در صندوق ورودی پیدا نشد.", "Connected successfully; no inbox messages were found.")
                 } else {
                     "اتصال موفق است؛ ${inbox.size} ایمیل دریافت شد."
                 }
                 val answer = if (inbox.isEmpty()) {
-                    "صندوق ورودی Gmail بررسی شد؛ ایمیل تازه‌ای برای نمایش پیدا نکردم."
+                    AtlasText.of("صندوق ورودی Gmail بررسی شد؛ ایمیل تازه‌ای برای نمایش پیدا نکردم.", "Gmail inbox checked; there are no recent messages to show.")
                 } else {
                     buildString {
-                        append("صندوق ورودی Gmail بررسی شد. ")
+                        append(AtlasText.of("صندوق ورودی Gmail بررسی شد. ", "Gmail inbox checked. "))
                         append(inbox.size)
-                        append(" ایمیل اخیر دریافت کردم:\n\n")
+                        append(AtlasText.of(" ایمیل اخیر دریافت کردم:\n\n", " recent emails were retrieved:\n\n"))
                         inbox.forEachIndexed { index, item ->
                             append(index + 1)
                             append(") ")
                             append(item)
                             append("\n\n")
                         }
-                        append("این بررسی فقط خواندنی بود؛ هیچ ایمیلی ارسال یا حذف نشد.")
+                        append(AtlasText.of("این بررسی فقط خواندنی بود؛ هیچ ایمیلی ارسال یا حذف نشد.", "This check was read-only; no emails were sent or deleted."))
                     }
                 }
                 onResult(answer)
             } catch (error: Exception) {
-                val detail = error.localizedMessage ?: "خطای شبکه یا مجوز Google"
+                val detail = error.localizedMessage ?: AtlasText.of("خطای شبکه یا مجوز Google", "Network or Google permission error")
                 gmailStatus = "بررسی Gmail ناموفق بود: $detail"
                 onResult("نتوانستم ایمیل‌ها را بخوانم: $detail\nاگر مجوز منقضی شده یا لغو شده است، از بخش اتصال برنامه‌ها دوباره Gmail را متصل کن.")
             } finally {
@@ -268,7 +270,7 @@ class MainActivity : ComponentActivity() {
         gmailAccessToken = null
         gmailConnected = false
         gmailMessages = emptyList()
-        gmailStatus = "توکن موقت از حافظه برنامه پاک شد. برای لغو کامل مجوز، دسترسی ATLAS AI را از تنظیمات حساب Google حذف کن."
+        gmailStatus = AtlasText.of("توکن موقت از حافظه برنامه پاک شد. برای لغو کامل مجوز، دسترسی ATLAS AI را از تنظیمات حساب Google حذف کن.", "The temporary token was cleared from memory. To revoke access completely, remove ATLAS AI from your Google Account security settings.")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -322,7 +324,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
             MaterialTheme(colorScheme = appColors) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CompositionLocalProvider(LocalLayoutDirection provides if (LocalePolicy.isRightToLeft(java.util.Locale.getDefault().toLanguageTag())) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                     AtlasApp(
                         gmailStatus = gmailStatus,
                         gmailMessages = gmailMessages,
@@ -393,7 +395,7 @@ private fun AtlasApp(
             input = ""
             if (isGmailCheckRequest(cleanText)) {
                 val pendingId = nextId++
-                messages.add(ChatMessage(pendingId, "در حال بررسی صندوق ورودی Gmail...", false))
+                messages.add(ChatMessage(pendingId, AtlasText.of("در حال بررسی صندوق ورودی Gmail...", "Checking the Gmail inbox..."), false))
                 persistCurrentConversation()
                 onReadGmailForChat { answer ->
                     val pendingIndex = messages.indexOfFirst { it.id == pendingId }
@@ -450,22 +452,22 @@ private fun AtlasApp(
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Text("ATLAS AI", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                                    Text("هوشمندی بدون مرز", color = Color(0xFFB8C8DC), fontSize = 11.sp)
+                                    Text(AtlasText.of("هوشمندی بدون مرز", "Intelligence without borders"), color = Color(0xFFB8C8DC), fontSize = 11.sp)
                                 }
                             }
                             Spacer(Modifier.height(15.dp))
-                            Text("دستیار هوشمند چندسرویس", color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold)
-                            Text("نسخه اولیه • در حال توسعه", color = Color(0xFF9FB4CC), fontSize = 11.sp)
+                            Text(AtlasText.of("دستیار هوشمند چندسرویس", "Multi-service AI assistant"), color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold)
+                            Text(AtlasText.of("نسخه اولیه • در حال توسعه", "Early access • In development"), color = Color(0xFF9FB4CC), fontSize = 11.sp)
                         }
                     }
                     Spacer(Modifier.height(12.dp))
                     atlasPages.forEach { page ->
                         when (page.id) {
-                            "chat" -> Text("فضای کاری", modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 3.dp),
+                            "chat" -> Text(AtlasText.of("فضای کاری", "Workspace"), modifier = Modifier.padding(start = 12.dp, top = 6.dp, bottom = 3.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                            "integrations" -> Text("اتصال و حساب", modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 3.dp),
+                            "integrations" -> Text(AtlasText.of("اتصال و حساب", "Connections & account"), modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 3.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                            "settings" -> Text("تنظیمات و پشتیبانی", modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 3.dp),
+                            "settings" -> Text(AtlasText.of("تنظیمات و پشتیبانی", "Settings & support"), modifier = Modifier.padding(start = 12.dp, top = 10.dp, bottom = 3.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                         }
                         NavigationDrawerItem(
@@ -491,9 +493,9 @@ private fun AtlasApp(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
                     ) {
                         Column(Modifier.padding(13.dp)) {
-                            Text("وضعیت نسخه", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Text(AtlasText.of("وضعیت نسخه", "Build status"), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                             Spacer(Modifier.height(4.dp))
-                            Text("نسخه 0.1.0 • امکانات در حال تکمیل هستند.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(AtlasText.of("نسخه 0.1.0 • امکانات در حال تکمیل هستند.", "Version 0.1.0 • Features are being completed."), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
                 }
@@ -508,7 +510,7 @@ private fun AtlasApp(
                         Column {
                             Text("ATLAS AI", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             Text(
-                                atlasPages.firstOrNull { it.id == currentPage }?.title ?: "اطلس",
+                                atlasPages.firstOrNull { it.id == currentPage }?.title ?: AtlasText.of("اطلس", "Atlas"),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -516,7 +518,7 @@ private fun AtlasApp(
                     },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "منو")
+                            Icon(Icons.Default.Menu, contentDescription = AtlasText.of("منو", "Menu"))
                         }
                     },
                     actions = {
@@ -529,9 +531,9 @@ private fun AtlasApp(
                             input = ""
                             currentPage = "chat"
                         }) {
-                            Icon(Icons.Default.Add, contentDescription = "گفت‌وگوی جدید")
+                            Icon(Icons.Default.Add, contentDescription = AtlasText.of("گفت‌وگوی جدید", "New chat"))
                         }
-                        TextButton(onClick = { showStatus = true }) { Text("وضعیت") }
+                        TextButton(onClick = { showStatus = true }) { Text(AtlasText.of("وضعیت", "Status")) }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
@@ -549,7 +551,7 @@ private fun AtlasApp(
                                 value = input,
                                 onValueChange = { input = it },
                                 modifier = Modifier.weight(1f),
-                                placeholder = { Text("پیام خود را بنویسید...") },
+                                placeholder = { Text(AtlasText.of("پیام خود را بنویسید...", "Write a message...")) },
                                 shape = RoundedCornerShape(24.dp),
                                 maxLines = 4,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -567,14 +569,14 @@ private fun AtlasApp(
                             ) {
                                 Icon(
                                     Icons.Default.Send,
-                                    contentDescription = "ارسال پیام",
+                                    contentDescription = AtlasText.of("ارسال پیام", "Send message"),
                                     tint = if (input.isNotBlank()) Color.White
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                         Text(
-                            "برای بررسی ایمیل، Gmail را از بخش «اتصال برنامه‌ها» وصل کن؛ سپس در همین گفت‌وگو بنویس «ایمیل‌های جدیدم را بررسی کن».",
+                            AtlasText.of("برای بررسی ایمیل، Gmail را از بخش «اتصال برنامه‌ها» وصل کن؛ سپس در همین گفت‌وگو بنویس «ایمیل‌های جدیدم را بررسی کن».", "To check email, connect Gmail in Connected apps, then type “check my recent emails” in this chat."),
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -616,26 +618,26 @@ private fun AtlasApp(
                     }
                 )
                 "explore" -> FeaturePage(
-                    "کاوش دستیارها",
-                    "حالت‌های کاری تخصصی برای نیازهای مختلف.",
+                    AtlasText.of("کاوش دستیارها", "Explore assistants"),
+                    AtlasText.of("حالت‌های کاری تخصصی برای نیازهای مختلف.", "Specialized work modes for different needs."),
                     listOf(
-                        "نویسنده و ویراستار" to "نگارش، بازنویسی و خلاصه‌سازی",
-                        "مربی یادگیری" to "آموزش مرحله‌ای و تمرین",
-                        "همراه برنامه‌نویسی" to "توضیح کد و عیب‌یابی",
-                        "پژوهشگر" to "تحلیل موضوع و طراحی تحقیق",
-                        "دستیار کسب‌وکار" to "برنامه‌ریزی و تحلیل فرایند"
+                        AtlasText.of("نویسنده و ویراستار", "Writer & editor") to AtlasText.of("نگارش، بازنویسی و خلاصه‌سازی", "Writing, rewriting, and summarizing"),
+                        AtlasText.of("مربی یادگیری", "Learning coach") to AtlasText.of("آموزش مرحله‌ای و تمرین", "Step-by-step learning and practice"),
+                        AtlasText.of("همراه برنامه‌نویسی", "Coding assistant") to AtlasText.of("توضیح کد و عیب‌یابی", "Code explanation and debugging"),
+                        AtlasText.of("پژوهشگر", "Researcher") to AtlasText.of("تحلیل موضوع و طراحی تحقیق", "Topic analysis and research design"),
+                        AtlasText.of("دستیار کسب‌وکار", "Business assistant") to AtlasText.of("برنامه‌ریزی و تحلیل فرایند", "Planning and process analysis")
                     ),
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "tools" -> FeaturePage(
-                    "ابزارهای اطلس",
-                    "ابزارها پس از پیاده‌سازی و اتصال امن فعال می‌شوند.",
+                    AtlasText.of("ابزارهای اطلس", "ATLAS tools"),
+                    AtlasText.of("ابزارها پس از پیاده‌سازی و اتصال امن فعال می‌شوند.", "Tools will be enabled after implementation and secure connection."),
                     listOf(
-                        "تحلیل فایل و سند" to "دریافت و خلاصه‌سازی اسناد",
-                        "درک تصویر" to "پرسش درباره تصاویر",
-                        "جست‌وجوی وب" to "تحقیق همراه منابع",
-                        "ورودی و خروجی صوت" to "گفتار به متن و خواندن پاسخ",
-                        "محیط کدنویسی" to "توضیح و بررسی کد"
+                        AtlasText.of("تحلیل فایل و سند", "File & document analysis") to AtlasText.of("دریافت و خلاصه‌سازی اسناد", "Document extraction and summarization"),
+                        AtlasText.of("درک تصویر", "Image understanding") to AtlasText.of("پرسش درباره تصاویر", "Ask questions about images"),
+                        AtlasText.of("جست‌وجوی وب", "Web search") to AtlasText.of("تحقیق همراه منابع", "Research with sources"),
+                        AtlasText.of("ورودی و خروجی صوت", "Voice input & output") to AtlasText.of("گفتار به متن و خواندن پاسخ", "Speech-to-text and spoken responses"),
+                        AtlasText.of("محیط کدنویسی", "Coding workspace") to AtlasText.of("توضیح و بررسی کد", "Explain and review code")
                     ),
                     Modifier.fillMaxSize().padding(padding)
                 )
@@ -652,13 +654,13 @@ private fun AtlasApp(
                     Modifier.fillMaxSize().padding(padding)
                 )
                 "privacy" -> FeaturePage(
-                    "حریم خصوصی و امنیت",
-                    "اصول لازم پیش از اتصال سرویس‌ها.",
+                    AtlasText.of("حریم خصوصی و امنیت", "Privacy & security"),
+                    AtlasText.of("اصول لازم پیش از اتصال سرویس‌ها.", "Principles to follow before connecting services."),
                     listOf(
-                        "کلیدهای محرمانه" to "فقط در Secret Manager سمت سرور نگهداری می‌شوند.",
-                        "حداقل‌سازی داده" to "فقط داده ضروری جمع‌آوری می‌شود.",
-                        "کنترل کاربر" to "مدیریت و حذف داده‌ها در طراحی لحاظ می‌شود.",
-                        "ارتباط امن" to "احراز هویت و محدودیت درخواست در سمت سرور."
+                        AtlasText.of("کلیدهای محرمانه", "Secret keys") to AtlasText.of("فقط در Secret Manager سمت سرور نگهداری می‌شوند.", "Stored only in the server-side secret manager."),
+                        AtlasText.of("حداقل‌سازی داده", "Data minimization") to AtlasText.of("فقط داده ضروری جمع‌آوری می‌شود.", "Only necessary data is collected."),
+                        AtlasText.of("کنترل کاربر", "User control") to AtlasText.of("مدیریت و حذف داده‌ها در طراحی لحاظ می‌شود.", "Data management and deletion are part of the design."),
+                        AtlasText.of("ارتباط امن", "Secure communication") to AtlasText.of("احراز هویت و محدودیت درخواست در سمت سرور.", "Server-side authentication and request limits.")
                     ),
                     Modifier.fillMaxSize().padding(padding)
                 )
@@ -670,18 +672,18 @@ private fun AtlasApp(
     if (showStatus) {
         AlertDialog(
             onDismissRequest = { showStatus = false },
-            title = { Text("وضعیت ATLAS AI") },
+            title = { Text(AtlasText.of("وضعیت ATLAS AI", "ATLAS AI status")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("رابط اصلی Android: در حال توسعه")
-                    Text("زبان رابط فعلی: فارسی")
-                    Text("هوش مصنوعی: هنوز متصل نشده")
-                    Text("دیتابیس و حساب آنلاین: هنوز متصل نشده")
-                    Text("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد")
-                    Text("گفت‌وگو: ذخیره محلی فعال؛ اتصال هوش مصنوعی و آزمون نهایی باقی است.")
+                    Text(AtlasText.of("زبان رابط فعلی: فارسی", "Current interface language: English"))
+                    Text(AtlasText.of("هوش مصنوعی: هنوز متصل نشده", "AI engine: not connected yet"))
+                    Text(AtlasText.of("دیتابیس و حساب آنلاین: هنوز متصل نشده", "Cloud database and account: not connected"))
+                    Text(AtlasText.of("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد", "Secrets are never placed in the app or GitHub"))
+                    Text(AtlasText.of("گفت‌وگو: ذخیره محلی فعال؛ اتصال هوش مصنوعی و آزمون نهایی باقی است.", "Chat: local storage is active; AI connection and final testing remain."))
                 }
             },
-            confirmButton = { TextButton(onClick = { showStatus = false }) { Text("بستن") } }
+            confirmButton = { TextButton(onClick = { showStatus = false }) { Text(AtlasText.of("بستن", "Close")) } }
         )
     }
 }
@@ -734,10 +736,10 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
         Text("ATLAS AI  /  PERSONAL INTELLIGENCE", fontSize = 9.sp,
             color = Color(0xFF70DCCE), fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
-        Text("سلام، من اطلس هستم", style = MaterialTheme.typography.headlineMedium,
+        Text(AtlasText.of("سلام، من اطلس هستم", "Hello, I'm Atlas"), style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold, color = Color(0xFFF2F6FF))
         Spacer(Modifier.height(7.dp))
-        Text("یک فضای یکپارچه برای گفتگو، تحقیق و انجام کارهای هوشمند.",
+        Text(AtlasText.of("یک فضای یکپارچه برای گفتگو، تحقیق و انجام کارهای هوشمند.", "One workspace for conversation, research, and intelligent tasks."),
             style = MaterialTheme.typography.bodyMedium, color = Color(0xFFA9B9CE))
         Spacer(Modifier.height(18.dp))
         Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFF172B3C)) {
@@ -746,9 +748,9 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
                 Box(Modifier.size(8.dp).background(Color(0xFFFFC66D), CircleShape))
                 Spacer(Modifier.width(9.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("نسخه آزمایشی", color = Color(0xFFEAF1FC), fontSize = 12.sp,
+                    Text(AtlasText.of("نسخه آزمایشی", "Preview build"), color = Color(0xFFEAF1FC), fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold)
-                    Text("برخی ابزارها هنوز به سرویس واقعی متصل نیستند",
+                    Text(AtlasText.of("برخی ابزارها هنوز به سرویس واقعی متصل نیستند", "Some tools are not connected to live services yet"),
                         color = Color(0xFF91A5BF), fontSize = 10.sp)
                 }
                 Text("۰.۱", color = Color(0xFFB8E9E2), fontSize = 11.sp,
@@ -757,46 +759,46 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
         }
         Spacer(Modifier.height(23.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("فضای کاری اطلس", color = Color(0xFFEAF1FC),
+            Text(AtlasText.of("فضای کاری اطلس", "ATLAS workspace"), color = Color(0xFFEAF1FC),
                 fontWeight = FontWeight.Bold, fontSize = 15.sp)
             Spacer(Modifier.weight(1f))
-            Text("ابزارها", color = Color(0xFF8FA4BE), fontSize = 11.sp)
+            Text(AtlasText.of("ابزارها", "Tools"), color = Color(0xFF8FA4BE), fontSize = 11.sp)
         }
         Spacer(Modifier.height(11.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.ChatBubbleOutline, "گفت‌وگوی هوشمند", "تعامل و پاسخ‌گویی", Color(0xFF9B91FF), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Image, "هوش تصویری", "تحلیل و تولید تصویر", Color(0xFF62B8FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.ChatBubbleOutline, AtlasText.of("گفت‌وگوی هوشمند", "AI chat"), AtlasText.of("تعامل و پاسخ‌گویی", "Conversation and answers"), Color(0xFF9B91FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Image, AtlasText.of("هوش تصویری", "Image intelligence"), AtlasText.of("تحلیل و تولید تصویر", "Image analysis and generation"), Color(0xFF62B8FF), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.Movie, "رسانه و ویدیو", "ابزارهای چندرسانه‌ای", Color(0xFFFFB86B), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Mic, "دستیار صوتی", "گفتار و شنیدن پاسخ", Color(0xFF5ED9C8), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Movie, AtlasText.of("رسانه و ویدیو", "Media & video"), AtlasText.of("ابزارهای چندرسانه‌ای", "Multimedia tools"), Color(0xFFFFB86B), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Mic, AtlasText.of("دستیار صوتی", "Voice assistant"), AtlasText.of("گفتار و شنیدن پاسخ", "Speak and listen to answers"), Color(0xFF5ED9C8), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.Code, "برنامه‌نویسی", "کدنویسی و عیب‌یابی", Color(0xFF79A9FF), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Description, "تحلیل اسناد", "کار با فایل و متن", Color(0xFFE2A7FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Code, AtlasText.of("برنامه‌نویسی", "Programming"), AtlasText.of("کدنویسی و عیب‌یابی", "Coding and debugging"), Color(0xFF79A9FF), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Description, AtlasText.of("تحلیل اسناد", "Document analysis"), AtlasText.of("کار با فایل و متن", "Work with files and text"), Color(0xFFE2A7FF), Modifier.weight(1f))
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            AtlasToolCard(Icons.Filled.TravelExplore, "پژوهش وب", "جست‌وجوی منابع", Color(0xFF62D5B2), Modifier.weight(1f))
-            AtlasToolCard(Icons.Filled.Psychology, "تحلیل تخصصی", "حل مسئله و یادگیری", Color(0xFFFFD078), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.TravelExplore, AtlasText.of("پژوهش وب", "Web research"), AtlasText.of("جست‌وجوی منابع", "Search for sources"), Color(0xFF62D5B2), Modifier.weight(1f))
+            AtlasToolCard(Icons.Filled.Psychology, AtlasText.of("تحلیل تخصصی", "Specialized analysis"), AtlasText.of("حل مسئله و یادگیری", "Problem solving and learning"), Color(0xFFFFD078), Modifier.weight(1f))
         }
         Spacer(Modifier.height(24.dp))
-        Text("برای شروع انتخاب کنید", modifier = Modifier.fillMaxWidth(),
+        Text(AtlasText.of("برای شروع انتخاب کنید", "Choose a starting point"), modifier = Modifier.fillMaxWidth(),
             color = Color(0xFFEAF1FC), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(10.dp))
         listOf(
-            Triple("✎", "نگارش و ترجمه", "نوشتن، بازنویسی و ترجمه متن"),
-            Triple("⌘", "برنامه‌نویسی", "بررسی کد و یافتن خطاها"),
-            Triple("◇", "یادگیری و پژوهش", "بررسی مرحله‌ای یک موضوع")
+            Triple("✎", AtlasText.of("نگارش و ترجمه", "Writing and translation"), AtlasText.of("نوشتن، بازنویسی و ترجمه متن", "Write, rewrite, and translate text")),
+            Triple("⌘", AtlasText.of("برنامه‌نویسی", "Programming"), AtlasText.of("بررسی کد و یافتن خطاها", "Review code and find bugs")),
+            Triple("◇", AtlasText.of("یادگیری و پژوهش", "Learning and research"), AtlasText.of("بررسی مرحله‌ای یک موضوع", "Explore a topic step by step"))
         ).forEach { option ->
             SuggestionCard(option.first, option.second, option.third) {
                 onPromptClick("در زمینه " + option.second + " به من کمک کن.")
             }
             Spacer(Modifier.height(9.dp))
         }
-        Text("قابلیت‌های نمایشی تا زمان اتصال و آزمون سرویس مربوطه فعال نیستند.",
+        Text(AtlasText.of("قابلیت‌های نمایشی تا زمان اتصال و آزمون سرویس مربوطه فعال نیستند.", "Preview features remain inactive until their services are connected and tested."),
             color = Color(0xFF8195AE), fontSize = 10.sp,
             modifier = Modifier.padding(top = 7.dp, bottom = 12.dp))
     }
@@ -826,7 +828,7 @@ private fun AtlasToolCard(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                Text("آماده‌سازی", fontSize = 8.sp, color = Color(0xFF91A5BF))
+                Text(AtlasText.of("آماده‌سازی", "In preparation"), fontSize = 8.sp, color = Color(0xFF91A5BF))
             }
             Column {
                 Text(title, color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
@@ -877,7 +879,7 @@ private fun IntegrationsPage(
     modifier: Modifier = Modifier
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("مرکز اتصال سرویس‌ها", "مدیریت یکپارچه دسترسی‌ها و ارتباط اطلس با برنامه‌های دیگر.")
+        PageTitle(AtlasText.of("مرکز اتصال سرویس‌ها", "Service connection center"), AtlasText.of("مدیریت یکپارچه دسترسی‌ها و ارتباط اطلس با برنامه‌های دیگر.", "Manage ATLAS permissions and connections to other apps."))
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -891,14 +893,14 @@ private fun IntegrationsPage(
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("اتصال‌های حساب", color = Color.White, fontWeight = FontWeight.Bold)
-                    Text("دسترسی‌ها فقط با اجازه شما فعال می‌شوند.", color = Color(0xFFB5C6D8), fontSize = 11.sp)
+                    Text(AtlasText.of("اتصال‌های حساب", "Account connections"), color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(AtlasText.of("دسترسی‌ها فقط با اجازه شما فعال می‌شوند.", "Access is enabled only with your permission."), color = Color(0xFFB5C6D8), fontSize = 11.sp)
                 }
-                Text("۰۱ فعال", color = Color(0xFF83E2D2), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(AtlasText.of("۰۱ فعال", "01 active"), color = Color(0xFF83E2D2), fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(Modifier.height(16.dp))
-        Text("سرویس‌های متصل", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(AtlasText.of("سرویس‌های متصل", "Connected services"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(9.dp))
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
             Column(Modifier.padding(16.dp)) {
@@ -911,57 +913,57 @@ private fun IntegrationsPage(
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text("Google Gmail", fontWeight = FontWeight.Bold)
-                        Text("خواندن ایمیل‌ها • مجوز فقط‌خواندنی", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                        Text(AtlasText.of("خواندن ایمیل‌ها • مجوز فقط‌خواندنی", "Read emails • read-only permission"), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                     Surface(shape = RoundedCornerShape(20.dp), color = if (gmailMessages.isNotEmpty()) Color(0xFFDDF5E9) else Color(0xFFFFF0D8)) {
-                        Text(if (gmailConnected) "متصل" else "نیازمند اتصال",
+                        Text(if (gmailConnected) AtlasText.of("متصل", "Connected") else AtlasText.of("نیازمند اتصال", "Not connected"),
                             modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                             color = if (gmailConnected) Color(0xFF176B45) else Color(0xFF8A5B14),
                             fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Spacer(Modifier.height(14.dp))
-                Text("اطلس می‌تواند ۸ ایمیل اخیر صندوق ورودی را دریافت کند و فرستنده، موضوع و خلاصه اولیه را نمایش دهد.",
+                Text(AtlasText.of("اطلس می‌تواند ۸ ایمیل اخیر صندوق ورودی را دریافت کند و فرستنده، موضوع و خلاصه اولیه را نمایش دهد.", "ATLAS can retrieve up to 8 recent inbox messages and show the sender, subject, and preview."),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.height(10.dp))
                 Text(gmailStatus, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = onConnectGmail, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (gmailConnected) "اتصال دوباره / تغییر حساب Google" else "اتصال امن حساب Google")
+                    Text(if (gmailConnected) AtlasText.of("اتصال دوباره / تغییر حساب Google", "Reconnect / change Google account") else AtlasText.of("اتصال امن حساب Google", "Securely connect Google account"))
                 }
                 OutlinedButton(onClick = onRefreshGmail, enabled = !gmailLoading && gmailConnected,
                     modifier = Modifier.fillMaxWidth()) {
-                    Text(if (gmailLoading) "در حال دریافت..." else "همگام‌سازی دوباره")
+                    Text(if (gmailLoading) AtlasText.of("در حال دریافت...", "Loading...") else AtlasText.of("همگام‌سازی دوباره", "Refresh"))
                 }
                 TextButton(onClick = onDisconnectGmail, modifier = Modifier.fillMaxWidth()) {
-                    Text("قطع دسترسی در این نشست")
+                    Text(AtlasText.of("قطع دسترسی در این نشست", "Disconnect this session"))
                 }
             }
         }
         Spacer(Modifier.height(18.dp))
-        Text("فعالیت اخیر Gmail", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(AtlasText.of("فعالیت اخیر Gmail", "Recent Gmail activity"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(9.dp))
         if (gmailMessages.isEmpty()) {
-            EmptyCard("هنوز ایمیلی دریافت نشده", "پس از اتصال Google و تأیید مجوز، ایمیل‌های اخیر اینجا نمایش داده می‌شوند.")
+            EmptyCard(AtlasText.of("هنوز ایمیلی دریافت نشده", "No emails retrieved yet"), AtlasText.of("پس از اتصال Google و تأیید مجوز، ایمیل‌های اخیر اینجا نمایش داده می‌شوند.", "Recent emails will appear here after Google is connected and permission is granted."))
         } else {
             gmailMessages.forEachIndexed { index, item ->
-                InfoCard("ایمیل " + (index + 1), item)
+                InfoCard(AtlasText.of("ایمیل ", "Email ") + (index + 1), item)
                 Spacer(Modifier.height(8.dp))
             }
         }
         Spacer(Modifier.height(10.dp))
-        Text("سرویس‌های قابل توسعه", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(AtlasText.of("سرویس‌های قابل توسعه", "Services planned for integration"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(9.dp))
         listOf(
-            "GitHub" to "مخزن‌ها و ابزارهای توسعه • اتصال در مرحله بعد",
-            "Google Drive" to "فایل‌ها و اسناد • اتصال در مرحله بعد",
-            "Google Calendar" to "رویدادها و برنامه‌ریزی • اتصال در مرحله بعد",
-            "Supabase" to "زیرساخت داده و حساب • هنوز متصل نشده"
+            "GitHub" to AtlasText.of("مخزن‌ها و ابزارهای توسعه • اتصال در مرحله بعد", "Repositories and developer tools • planned"),
+            "Google Drive" to AtlasText.of("فایل‌ها و اسناد • اتصال در مرحله بعد", "Files and documents • planned"),
+            "Google Calendar" to AtlasText.of("رویدادها و برنامه‌ریزی • اتصال در مرحله بعد", "Events and scheduling • planned"),
+            "Supabase" to AtlasText.of("زیرساخت داده و حساب • هنوز متصل نشده", "Data and account infrastructure • not connected")
         ).forEach { item ->
             InfoCard(item.first, item.second)
             Spacer(Modifier.height(8.dp))
         }
-        InfoCard("حریم خصوصی Gmail", "فقط مجوز gmail.readonly درخواست می‌شود. اطلس نمی‌تواند ایمیل ارسال یا حذف کند. توکن دسترسی فقط در حافظه همین اجرای برنامه است و در GitHub یا دیتابیس ذخیره نمی‌شود. برای لغو کامل، مجوز ATLAS AI را از حساب Google حذف کن.")
+        InfoCard(AtlasText.of("حریم خصوصی Gmail", "Gmail privacy"), AtlasText.of("فقط مجوز gmail.readonly درخواست می‌شود. اطلس نمی‌تواند ایمیل ارسال یا حذف کند. توکن دسترسی فقط در حافظه همین اجرای برنامه است و در GitHub یا دیتابیس ذخیره نمی‌شود. برای لغو کامل، مجوز ATLAS AI را از حساب Google حذف کن.", "Only the gmail.readonly permission is requested. ATLAS cannot send or delete emails. The access token stays in this app session's memory and is not stored in GitHub or a database. To revoke access fully, remove ATLAS AI from your Google Account."))
     }
 }
 
@@ -986,20 +988,20 @@ private fun HistoryPage(
         )
     }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تاریخچه گفت‌وگوها", "مکالمه‌های ذخیره‌شده روی همین دستگاه را باز کن، ادامه بده یا حذف کن.")
+        PageTitle(AtlasText.of("تاریخچه گفت‌وگوها", "Chat history"), AtlasText.of("مکالمه‌های ذخیره‌شده روی همین دستگاه را باز کن، ادامه بده یا حذف کن.", "Open, continue, rename, search, or delete conversations saved on this device."))
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            label = { Text("جست‌وجوی گفت‌وگو") }
+            label = { Text(AtlasText.of("جست‌وجوی گفت‌وگو", "Search conversations")) }
         )
         Spacer(Modifier.height(10.dp))
         if (visibleConversations.isEmpty()) {
             if (searchQuery.isBlank()) {
-                EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.")
+                EmptyCard(AtlasText.of("هنوز گفت‌وگویی وجود ندارد", "No conversations yet"), AtlasText.of("با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.", "Your conversation will appear here after you send the first message."))
             } else {
-                EmptyCard("نتیجه‌ای پیدا نشد", "عبارت جست‌وجو را کوتاه‌تر کن یا واژه دیگری را امتحان کن.")
+                EmptyCard(AtlasText.of("نتیجه‌ای پیدا نشد", "No results found"), AtlasText.of("عبارت جست‌وجو را کوتاه‌تر کن یا واژه دیگری را امتحان کن.", "Try a shorter search phrase or different keyword."))
             }
         } else {
             visibleConversations.forEach { conversation ->
@@ -1021,7 +1023,7 @@ private fun HistoryPage(
                                 maxLines = 2
                             )
                             if (conversation.id == activeConversationId) {
-                                Text("فعال", color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
+                                Text(AtlasText.of("فعال", "Active"), color = MaterialTheme.colorScheme.primary, fontSize = 10.sp)
                             }
                         }
                         Spacer(Modifier.height(5.dp))
@@ -1042,10 +1044,10 @@ private fun HistoryPage(
                             TextButton(onClick = {
                                 renameText = conversation.title
                                 pendingRename = conversation
-                            }) { Text("تغییر نام") }
-                            TextButton(onClick = { pendingDelete = conversation }) { Text("حذف") }
+                            }) { Text(AtlasText.of("تغییر نام", "Rename")) }
+                            TextButton(onClick = { pendingDelete = conversation }) { Text(AtlasText.of("حذف", "Delete")) }
                             TextButton(onClick = { onOpenConversation(conversation) }) {
-                                Text(if (conversation.id == activeConversationId) "ادامه گفت‌وگو" else "بازکردن")
+                                Text(if (conversation.id == activeConversationId) AtlasText.of("ادامه گفت‌وگو", "Continue") else AtlasText.of("بازکردن", "Open"))
                             }
                         }
                     }
@@ -1054,7 +1056,7 @@ private fun HistoryPage(
             }
         }
         Text(
-            "تاریخچه فقط روی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.",
+            AtlasText.of("تاریخچه فقط روی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.", "History is stored only on this device; cloud sync is not active."),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelSmall
         )
@@ -1062,39 +1064,39 @@ private fun HistoryPage(
     pendingRename?.let { selected ->
         AlertDialog(
             onDismissRequest = { pendingRename = null },
-            title = { Text("تغییر نام گفت‌وگو") },
+            title = { Text(AtlasText.of("تغییر نام گفت‌وگو", "Rename conversation")) },
             text = {
                 OutlinedTextField(
                     value = renameText,
                     onValueChange = { renameText = it.take(60) },
                     singleLine = true,
-                    label = { Text("نام گفت‌وگو") }
+                    label = { Text(AtlasText.of("نام گفت‌وگو", "Conversation name")) }
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
                     onRenameConversation(selected, renameText)
                     pendingRename = null
-                }, enabled = renameText.isNotBlank()) { Text("ذخیره") }
+                }, enabled = renameText.isNotBlank()) { Text(AtlasText.of("ذخیره", "Save")) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRename = null }) { Text("انصراف") }
+                TextButton(onClick = { pendingRename = null }) { Text(AtlasText.of("انصراف", "Cancel")) }
             }
         )
     }
     pendingDelete?.let { selected ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text("حذف گفت‌وگو؟") },
+            title = { Text(AtlasText.of("حذف گفت‌وگو؟", "Delete conversation?")) },
             text = { Text("«" + selected.title + "» و پیام‌های ذخیره‌شده آن از این دستگاه حذف می‌شوند.") },
             confirmButton = {
                 TextButton(onClick = {
                     onDeleteConversation(selected)
                     pendingDelete = null
-                }) { Text("حذف") }
+                }) { Text(AtlasText.of("حذف", "Delete")) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("انصراف") }
+                TextButton(onClick = { pendingDelete = null }) { Text(AtlasText.of("انصراف", "Cancel")) }
             }
         )
     }
@@ -1113,7 +1115,7 @@ private fun FeaturePage(
             InfoCard(feature.first, feature.second)
             Spacer(Modifier.height(10.dp))
         }
-        Text("این بخش در مرحله ساختار است و قابلیت عملیاتی آن هنوز فعال نشده است.",
+        Text(AtlasText.of("این بخش در مرحله ساختار است و قابلیت عملیاتی آن هنوز فعال نشده است.", "This section is a structure preview; its functionality is not active yet."),
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -1121,7 +1123,7 @@ private fun FeaturePage(
 @Composable
 private fun ProfilePage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("حساب کاربری", "مدیریت هویت، نشست و اطلاعات شخصی در یک مکان.")
+        PageTitle(AtlasText.of("حساب کاربری", "Account"), AtlasText.of("مدیریت هویت، نشست و اطلاعات شخصی در یک مکان.", "Manage your identity, session, and personal details in one place."))
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(22.dp),
@@ -1130,44 +1132,44 @@ private fun ProfilePage(modifier: Modifier = Modifier) {
             Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = CircleShape, color = Color(0xFF294B68), modifier = Modifier.size(58.dp)) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("م", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+                        Text(AtlasText.of("م", "G"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 25.sp)
                     }
                 }
                 Spacer(Modifier.width(14.dp))
                 Column {
-                    Text("حساب مهمان", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                    Text("ذخیره‌سازی گفتگوها روی همین دستگاه", color = Color(0xFFB8C8DC), fontSize = 11.sp)
+                    Text(AtlasText.of("حساب مهمان", "Guest account"), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    Text(AtlasText.of("ذخیره‌سازی گفتگوها روی همین دستگاه", "Conversations are stored on this device"), color = Color(0xFFB8C8DC), fontSize = 11.sp)
                     Spacer(Modifier.height(6.dp))
-                    Text("ورود آنلاین هنوز فعال نشده", color = Color(0xFF83E2D2), fontSize = 10.sp)
+                    Text(AtlasText.of("ورود آنلاین هنوز فعال نشده", "Online sign-in is not enabled yet"), color = Color(0xFF83E2D2), fontSize = 10.sp)
                 }
             }
         }
         Spacer(Modifier.height(14.dp))
-        Text("مدیریت حساب", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(AtlasText.of("مدیریت حساب", "Account management"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(8.dp))
-        InfoCard("اطلاعات نمایه", "نام نمایشی و تصویر حساب پس از راه‌اندازی حساب امن قابل تنظیم خواهد بود.")
+        InfoCard(AtlasText.of("اطلاعات نمایه", "Profile information"), AtlasText.of("نام نمایشی و تصویر حساب پس از راه‌اندازی حساب امن قابل تنظیم خواهد بود.", "Display name and profile image will be configurable after secure accounts are implemented."))
         Spacer(Modifier.height(8.dp))
-        InfoCard("امنیت و نشست‌ها", "ورود، خروج و مدیریت نشست‌ها هنوز پیاده‌سازی نشده‌اند.")
+        InfoCard(AtlasText.of("امنیت و نشست‌ها", "Security and sessions"), AtlasText.of("ورود، خروج و مدیریت نشست‌ها هنوز پیاده‌سازی نشده‌اند.", "Sign-in, sign-out, and session management are not implemented yet."))
         Spacer(Modifier.height(8.dp))
-        InfoCard("داده‌ها و حریم خصوصی", "گفتگوهای فعلی در فضای خصوصی برنامه ذخیره می‌شوند؛ ابزار خروجی‌گرفتن و حذف کامل داده‌ها در دست توسعه است.")
+        InfoCard(AtlasText.of("داده‌ها و حریم خصوصی", "Data and privacy"), AtlasText.of("گفتگوهای فعلی در فضای خصوصی برنامه ذخیره می‌شوند؛ ابزار خروجی‌گرفتن و حذف کامل داده‌ها در دست توسعه است.", "Current conversations are stored in the app's private space; data export and full deletion tools are still in development."))
         Spacer(Modifier.height(8.dp))
-        InfoCard("همگام‌سازی ابری", "فعلاً غیرفعال است؛ اطلاعات دستگاه به سرور ارسال نمی‌شود.")
+        InfoCard(AtlasText.of("همگام‌سازی ابری", "Cloud sync"), AtlasText.of("فعلاً غیرفعال است؛ اطلاعات دستگاه به سرور ارسال نمی‌شود.", "Currently disabled; device data is not sent to a server."))
     }
 }
 
 @Composable
 private fun PlansPage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("طرح‌های اشتراک", "طرح‌ها نمایشی هستند؛ قیمت و پرداخت هنوز تعریف نشده است.")
+        PageTitle(AtlasText.of("طرح‌های اشتراک", "Plans"), AtlasText.of("طرح‌ها نمایشی هستند؛ قیمت و پرداخت هنوز تعریف نشده است.", "Plans are previews; pricing and payments are not configured."))
         listOf(
-            "رایگان" to "گفت‌وگوی پایه و سهمیه محدود پس از اتصال",
-            "پلاس" to "سهمیه بیشتر و مدل‌های پیشرفته‌تر",
-            "پرو" to "سقف مصرف بالاتر و ابزارهای تخصصی"
+            AtlasText.of("رایگان", "Free") to AtlasText.of("گفت‌وگوی پایه و سهمیه محدود پس از اتصال", "Basic chat and limited quota after connection"),
+            AtlasText.of("پلاس", "Plus") to AtlasText.of("سهمیه بیشتر و مدل‌های پیشرفته‌تر", "Higher quota and advanced models"),
+            AtlasText.of("پرو", "Pro") to AtlasText.of("سقف مصرف بالاتر و ابزارهای تخصصی", "Higher usage limits and specialized tools")
         ).forEach { plan ->
-            InfoCard(plan.first, plan.second + " • هنوز فعال نیست")
+            InfoCard(plan.first, plan.second + AtlasText.of(" • هنوز فعال نیست", " • Not active yet"))
             Spacer(Modifier.height(10.dp))
         }
-        Text("هیچ پرداختی انجام نمی‌شود و درگاه پرداخت متصل نیست.",
+        Text(AtlasText.of("هیچ پرداختی انجام نمی‌شود و درگاه پرداخت متصل نیست.", "No payment is processed and no payment provider is connected."),
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -1179,7 +1181,7 @@ private fun SettingsPage(
     modifier: Modifier = Modifier
 ) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تنظیمات", "کنترل تجربه ظاهری و ترجیحات برنامه.")
+        PageTitle(AtlasText.of("تنظیمات", "Settings"), AtlasText.of("کنترل تجربه ظاهری و ترجیحات برنامه.", "Control appearance and app preferences."))
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -1187,44 +1189,44 @@ private fun SettingsPage(
         ) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("ظاهر برنامه", fontWeight = FontWeight.SemiBold)
+                    Text(AtlasText.of("ظاهر برنامه", "Appearance"), fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (darkThemeEnabled) "حالت تاریک فعال است" else "حالت روشن فعال است",
+                        if (darkThemeEnabled) AtlasText.of("حالت تاریک فعال است", "Dark mode is active") else AtlasText.of("حالت روشن فعال است", "Light mode is active"),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
-                Text(if (darkThemeEnabled) "تاریک" else "روشن", color = MaterialTheme.colorScheme.primary,
+                Text(if (darkThemeEnabled) AtlasText.of("تاریک", "Dark") else AtlasText.of("روشن", "Light"), color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
         }
         Spacer(Modifier.height(10.dp))
         Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) {
-            Text(if (darkThemeEnabled) "فعال‌کردن حالت روشن" else "فعال‌کردن حالت تاریک")
+            Text(if (darkThemeEnabled) AtlasText.of("فعال‌کردن حالت روشن", "Enable light mode") else AtlasText.of("فعال‌کردن حالت تاریک", "Enable dark mode"))
         }
         Spacer(Modifier.height(18.dp))
-        Text("زبان و منطقه", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(AtlasText.of("زبان و منطقه", "Language & region"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(8.dp))
-        InfoCard("زبان رابط", "فارسی در نسخه فعلی فعال است. ترجمه کامل انگلیسی و دری پیش از انتشار اضافه و آزمایش می‌شود.")
+        InfoCard(AtlasText.of("زبان رابط", "Interface language"), AtlasText.of("فارسی در نسخه فعلی فعال است. ترجمه کامل انگلیسی و دری پیش از انتشار اضافه و آزمایش می‌شود.", "The interface follows your device language. Full English and Dari localization is being completed and tested before release."))
         Spacer(Modifier.height(12.dp))
-        Text("تجربه و دسترس‌پذیری", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(AtlasText.of("تجربه و دسترس‌پذیری", "Experience & accessibility"), fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Spacer(Modifier.height(8.dp))
-        InfoCard("دسترس‌پذیری", "بهینه‌سازی صفحه‌خوان، اندازه متن و کنتراست در مرحله کنترل کیفیت قرار دارد.")
+        InfoCard(AtlasText.of("دسترس‌پذیری", "Accessibility"), AtlasText.of("بهینه‌سازی صفحه‌خوان، اندازه متن و کنتراست در مرحله کنترل کیفیت قرار دارد.", "Screen reader, text sizing, and contrast improvements are part of quality assurance."))
         Spacer(Modifier.height(8.dp))
-        InfoCard("اعلان‌ها", "اعلان‌های حساب و همگام‌سازی پس از راه‌اندازی سرویس حساب فعال می‌شوند.")
+        InfoCard(AtlasText.of("اعلان‌ها", "Notifications"), AtlasText.of("اعلان‌های حساب و همگام‌سازی پس از راه‌اندازی سرویس حساب فعال می‌شوند.", "Account and sync notifications will be enabled after the account service is implemented."))
         Spacer(Modifier.height(8.dp))
-        InfoCard("ذخیره‌سازی", "گفتگوها فعلاً فقط در فضای خصوصی همین دستگاه ذخیره می‌شوند.")
+        InfoCard(AtlasText.of("ذخیره‌سازی", "Storage"), AtlasText.of("گفتگوها فعلاً فقط در فضای خصوصی همین دستگاه ذخیره می‌شوند.", "Conversations are currently stored only in this device's private app storage."))
     }
 }
 
 @Composable
 private fun HelpPage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("راهنما و پشتیبانی", "راهنمای استفاده از اطلس AI.")
-        InfoCard("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.")
-        InfoCard("آیا برای دیدن ساختار کلید لازم است؟", "خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.")
-        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "پیام‌های گفت‌وگو به‌صورت محلی و خصوصی روی همین دستگاه ذخیره می‌شوند.")
-        InfoCard("پشتیبانی", "راه ارتباطی رسمی در زمان آماده‌سازی انتشار اضافه خواهد شد.")
+        PageTitle(AtlasText.of("راهنما و پشتیبانی", "Help & support"), AtlasText.of("راهنمای استفاده از اطلس AI.", "How to use ATLAS AI."))
+        InfoCard(AtlasText.of("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "Does ATLAS provide AI answers?"), AtlasText.of("خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.", "Not yet; the AI engine is not connected."))
+        InfoCard(AtlasText.of("آیا برای دیدن ساختار کلید لازم است؟", "Do I need a key to view the app structure?"), AtlasText.of("خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.", "No; the UI and screens work without API keys."))
+        InfoCard(AtlasText.of("آیا داده‌ها ذخیره می‌شوند؟", "Is my data stored?"), AtlasText.of("پیام‌های گفت‌وگو به‌صورت محلی و خصوصی روی همین دستگاه ذخیره می‌شوند.", "Chat messages are stored locally in the private app storage on this device."))
+        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("راه ارتباطی رسمی در زمان آماده‌سازی انتشار اضافه خواهد شد.", "Official support contact details will be added before release."))
     }
 }
 
@@ -1275,7 +1277,7 @@ private fun MessageBubble(message: ChatMessage) {
             horizontalAlignment = if (message.fromUser) Alignment.Start else Alignment.End
         ) {
             Text(
-                if (message.fromUser) "شما" else "ATLAS AI",
+                if (message.fromUser) AtlasText.of("شما", "You") else "ATLAS AI",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1302,7 +1304,7 @@ private fun MessageBubble(message: ChatMessage) {
                 onClick = { clipboardManager.setText(AnnotatedString(message.text)) },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
             ) {
-                Text("کپی متن", fontSize = 10.sp)
+                Text(AtlasText.of("کپی متن", "Copy text"), fontSize = 10.sp)
             }
         }
     }
