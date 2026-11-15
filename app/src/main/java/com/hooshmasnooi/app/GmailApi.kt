@@ -1,5 +1,6 @@
 package com.hooshmasnooi.app
 
+import com.hooshmasnooi.app.core.AtlasText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -29,10 +30,10 @@ object GmailApi {
                 }
                 return ""
             }
-            val subject = header("Subject").ifBlank { "(بدون موضوع)" }
-            val from = header("From").ifBlank { "فرستنده نامشخص" }
-            val date = header("Date").ifBlank { "تاریخ نامشخص" }
-            "موضوع: $subject\nفرستنده: $from\nتاریخ: $date\nخلاصه: ${detail.optString("snippet")}"
+            val subject = header("Subject").ifBlank { AtlasText.of("(بدون موضوع)", "(No subject)") }
+            val from = header("From").ifBlank { AtlasText.of("فرستنده نامشخص", "Unknown sender") }
+            val date = header("Date").ifBlank { AtlasText.of("تاریخ نامشخص", "Unknown date") }
+            AtlasText.of("موضوع: $subject\nفرستنده: $from\nتاریخ: $date\nخلاصه: ${detail.optString("snippet")}", "Subject: $subject\nFrom: $from\nDate: $date\nPreview: ${detail.optString("snippet")}")
         }
     }
 
