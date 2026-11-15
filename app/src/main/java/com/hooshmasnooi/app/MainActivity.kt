@@ -78,6 +78,8 @@ import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.domain.model.Conversation
 import com.hooshmasnooi.app.domain.repository.ChatHistoryRepository
 import java.util.UUID
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 
 private const val MAX_VISIBLE_MESSAGES = 300
@@ -171,6 +173,8 @@ private fun AtlasApp(
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    // Serialize UI-triggered history mutations so sends and deletions cannot overtake each other.
+    val historyMutationMutex = remember { Mutex() }
 
     fun sendMessage(rawText: String) {
         val cleanText = rawText.trim()
@@ -198,13 +202,15 @@ private fun AtlasApp(
         }
         input = ""
         scope.launch {
-            runCatching {
-                historyRepository.saveConversationAndMessage(conversation, message)
-                val refreshed = historyRepository.getConversations()
-                conversations.clear()
-                conversations.addAll(refreshed)
-            }.onFailure {
-                historyError = "ذخیره گفت‌وگو انجام نشد. فضای دستگاه و دسترسی برنامه را بررسی کنید."
+            historyMutationMutex.withLock {
+                runCatching {
+                    historyRepository.saveConversationAndMessage(conversation, message)
+                    val refreshed = historyRepository.getConversations()
+                    conversations.clear()
+                    conversations.addAll(refreshed)
+                }.onFailure {
+                    historyError = "ذخیره گفت‌وگو انجام نشد. فضای دستگاه و دسترسی برنامه را بررسی کنید."
+                }
             }
         }
     }
@@ -366,27 +372,31 @@ private fun AtlasApp(
                     ::openConversation,
                     { conversationId ->
                         scope.launch {
-                            runCatching {
-                                historyRepository.deleteConversation(conversationId)
-                                conversations.removeAll { it.id == conversationId }
-                                if (currentConversationId == conversationId) {
-                                    currentConversationId = null
-                                    messages.clear()
+                            historyMutationMutex.withLock {
+                                runCatching {
+                                    historyRepository.deleteConversation(conversationId)
+                                    conversations.removeAll { it.id == conversationId }
+                                    if (currentConversationId == conversationId) {
+                                        currentConversationId = null
+                                        messages.clear()
+                                    }
+                                }.onFailure {
+                                    historyError = "حذف گفت‌وگو انجام نشد. دوباره تلاش کنید."
                                 }
-                            }.onFailure {
-                                historyError = "حذف گفت‌وگو انجام نشد. دوباره تلاش کنید."
                             }
                         }
                     },
                     {
                         scope.launch {
-                            runCatching {
-                                historyRepository.deleteAllConversations()
-                                conversations.clear()
-                                messages.clear()
-                                currentConversationId = null
-                            }.onFailure {
-                                historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                            historyMutationMutex.withLock {
+                                runCatching {
+                                    historyRepository.deleteAllConversations()
+                                    conversations.clear()
+                                    messages.clear()
+                                    currentConversationId = null
+                                }.onFailure {
+                                    historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                                }
                             }
                         }
                     }
@@ -432,13 +442,15 @@ private fun AtlasApp(
                     onManageHistory = { currentPage = "history" },
                     onDeleteAll = {
                         scope.launch {
-                            runCatching {
-                                historyRepository.deleteAllConversations()
-                                conversations.clear()
-                                messages.clear()
-                                currentConversationId = null
-                            }.onFailure {
-                                historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                            historyMutationMutex.withLock {
+                                runCatching {
+                                    historyRepository.deleteAllConversations()
+                                    conversations.clear()
+                                    messages.clear()
+                                    currentConversationId = null
+                                }.onFailure {
+                                    historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                                }
                             }
                         }
                     },
