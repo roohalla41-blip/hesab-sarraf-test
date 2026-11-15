@@ -996,7 +996,11 @@ private fun HistoryPage(
         )
         Spacer(Modifier.height(10.dp))
         if (visibleConversations.isEmpty()) {
-            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.")
+            if (searchQuery.isBlank()) {
+                EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.")
+            } else {
+                EmptyCard("نتیجه‌ای پیدا نشد", "عبارت جست‌وجو را کوتاه‌تر کن یا واژه دیگری را امتحان کن.")
+            }
         } else {
             visibleConversations.forEach { conversation ->
                 Card(
