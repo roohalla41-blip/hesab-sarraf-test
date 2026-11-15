@@ -3,10 +3,11 @@ package com.hooshmasnooi.app.domain.repository
 import com.hooshmasnooi.app.domain.model.ChatMessage
 
 /**
- * Contract for sending a conversation to an assistant provider.
+ * Application contract for sending a conversation to ATLAS AI.
  *
- * No implementation is connected yet. A future implementation will call
- * the independent ATLAS AI backend; it must never call the Sarraf projects.
+ * The remote implementation lives in data/repository/RemoteChatRepository.kt
+ * and delegates to the authenticated server gateway. The Android UI must not
+ * substitute a canned answer when the backend is unavailable.
  */
 interface ChatRepository {
     suspend fun sendMessage(conversation: List<ChatMessage>): Result<String>
