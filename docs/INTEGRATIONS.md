@@ -32,8 +32,9 @@ The Android app has a Gmail read-only integration path in source code, not just 
 8. Confirm that messages load in the integration page, then send the Gmail-check command in chat and confirm that the inbox summary is returned.
 
 ## Other integrations
-- The Supabase Edge Function source supports server-side provider fallback across Z.AI, Cloudflare Workers AI, and a generic OpenAI-compatible endpoint.
-- The function has not been deployed; Android does not yet call it, and the app does not have a sign-in flow that can provide the required user JWT.
+- The deployed `atlas-chat` Edge Function in the independent ATLAS project (`wwlyvojtsrklcpqsloqz`) supports a generic OpenAI-compatible endpoint, Groq, Z.AI, and Cloudflare Workers AI when their server-side secrets/model settings exist.
+- Android and the browser client now call `atlas-chat`. The endpoint currently allows the published GitHub Pages origin and native Android requests without an Origin header; it uses a publishable project key and keeps provider secrets server-side.
+- The endpoint currently operates in guest/public mode (`verify_jwt = false`) with best-effort in-memory IP throttling. Durable per-user quotas and account authentication remain outstanding.
 - GitHub, Google Drive, and Google Calendar remain directory entries only. Their OAuth flows, per-user credential storage, provider API calls, and tests have not been implemented.
 
 ## Security boundaries
@@ -42,7 +43,7 @@ The Android app has a Gmail read-only integration path in source code, not just 
 - Any future server-side token storage must be per-user, encrypted, access-controlled, revocable, and tied to a verified app user.
 - Keep Gmail scopes minimal and request permissions only when the user invokes the feature.
 - Side-effecting actions such as sending or deleting email must require a separate implementation review and explicit user confirmation.
-- No remote Supabase project, database, authentication, RLS, or Edge Function has been changed or deployed during this work.
+- The ATLAS `atlas-chat` Edge Function was deployed/updated. No database schema, user accounts, Auth settings, or RLS policies were changed.
 
 ## Official references
 - Android authorization: https://developer.android.com/identity/authorization
