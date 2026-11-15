@@ -589,12 +589,12 @@ private fun HistoryPage(
             "تاریخچه گفت‌وگوها",
             "گفت‌وگوها به‌صورت محلی در حافظه خصوصی برنامه ذخیره می‌شوند."
         )
+        TextButton(onClick = { confirmDeleteAll = true }) {
+            Text("پاک‌کردن تاریخچه و نسخه پشتیبان", color = MaterialTheme.colorScheme.error)
+        }
         if (conversations.isEmpty()) {
             EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال اولین پیام، گفت‌وگوی شما اینجا ذخیره می‌شود.")
         } else {
-            TextButton(onClick = { confirmDeleteAll = true }) {
-                Text("پاک‌کردن همه تاریخچه", color = MaterialTheme.colorScheme.error)
-            }
             conversations.forEach { conversation ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -730,7 +730,6 @@ private fun PrivacyPage(
         Spacer(Modifier.height(8.dp))
         TextButton(
             onClick = { confirmDeleteAll = true },
-            enabled = conversationCount > 0,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("پاک‌کردن همه داده‌های تاریخچه", color = MaterialTheme.colorScheme.error)
