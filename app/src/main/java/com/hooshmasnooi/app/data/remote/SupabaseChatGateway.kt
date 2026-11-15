@@ -14,14 +14,13 @@ fun interface AccessTokenProvider {
 }
 
 /**
- * Authenticated client for the ATLAS Supabase Edge Function.
- * The anon key is a public project identifier; provider secrets stay server-side.
- * This adapter is intentionally not wired until the ATLAS project and sign-in flow are approved.
+ * Calls the public ATLAS chat endpoint.
+ * The publishable key is safe for client use; all AI provider credentials remain server-side.
  */
 class SupabaseChatGateway(
     private val supabaseUrl: String,
     private val anonKey: String,
-    private val accessTokenProvider: AccessTokenProvider,
+    private val accessTokenProvider: AccessTokenProvider = AccessTokenProvider { null },
 ) : AiGateway {
 
     override suspend fun complete(
@@ -32,30 +31,28 @@ class SupabaseChatGateway(
             return@withContext AiGatewayResult.Failure(AiFailure.NOT_CONFIGURED)
         }
 
-        val accessToken = runCatching { accessTokenProvider.currentAccessToken() }.getOrNull()
-        if (accessToken.isNullOrBlank()) {
-            return@withContext AiGatewayResult.Failure(AiFailure.UNAUTHORIZED)
-        }
-
-        val endpoint = runCatching {
-            val base = URL(supabaseUrl.trimEnd('/') + "/")
-            require(base.protocol == "https") { "HTTPS is required" }
-            URL(base, "functions/v1/chat")
-        }.getOrNull() ?: return@withContext AiGatewayResult.Failure(AiFailure.NOT_CONFIGURED)
-
         val recentMessages = messages.takeLast(MAX_MESSAGES)
-        if (recentMessages.isEmpty() || recentMessages.lastOrNull()?.fromUser != true ||
+        val latest = recentMessages.lastOrNull()
+        if (latest == null || !latest.fromUser ||
             recentMessages.any { it.text.isBlank() || it.text.length > MAX_MESSAGE_CHARS } ||
             recentMessages.sumOf { it.text.length } > MAX_TOTAL_CHARS
         ) {
             return@withContext AiGatewayResult.Failure(AiFailure.INVALID_RESPONSE)
         }
 
+        val endpoint = runCatching {
+            val base = URL(supabaseUrl.trimEnd('/') + "/")
+            require(base.protocol == "https") { "HTTPS is required" }
+            URL(base, "functions/v1/atlas-chat")
+        }.getOrNull() ?: return@withContext AiGatewayResult.Failure(AiFailure.NOT_CONFIGURED)
+
+        val accessToken = runCatching { accessTokenProvider.currentAccessToken() }.getOrNull()
+        val history = recentMessages.dropLast(1).takeLast(MAX_HISTORY_MESSAGES)
         val payload = JSONObject()
-            .put("conversation_id", conversationId)
-            .put("mode", "general")
-            .put("messages", JSONArray().apply {
-                recentMessages.forEach { message ->
+            .put("message", latest.text)
+            .put("mode", "عمومی")
+            .put("history", JSONArray().apply {
+                history.forEach { message ->
                     put(
                         JSONObject()
                             .put("role", if (message.fromUser) "user" else "assistant")
@@ -74,7 +71,9 @@ class SupabaseChatGateway(
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("apikey", anonKey)
-                setRequestProperty("Authorization", "Bearer $accessToken")
+                if (!accessToken.isNullOrBlank()) {
+                    setRequestProperty("Authorization", "Bearer $accessToken")
+                }
                 setRequestProperty("X-Request-ID", UUID.randomUUID().toString())
             }
             connection.outputStream.use { output ->
@@ -92,11 +91,12 @@ class SupabaseChatGateway(
                 val errorBody = runCatching {
                     connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
                 }.getOrDefault("")
-                val errorCode = runCatching {
-                    JSONObject(errorBody).optJSONObject("error")?.optString("code").orEmpty()
+                val errorMessage = runCatching {
+                    JSONObject(errorBody).optString("error").lowercase()
                 }.getOrDefault("")
                 val failure = when {
-                    errorCode == "AI_NOT_CONFIGURED" -> AiFailure.NOT_CONFIGURED
+                    status == 503 || errorMessage.contains("کلید") || errorMessage.contains("configured") ->
+                        AiFailure.NOT_CONFIGURED
                     status >= 500 -> AiFailure.SERVER
                     else -> AiFailure.INVALID_RESPONSE
                 }
@@ -104,8 +104,7 @@ class SupabaseChatGateway(
             }
 
             val responseText = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-            val response = JSONObject(responseText)
-            val answer = response.optJSONObject("assistant_message")?.optString("content").orEmpty()
+            val answer = JSONObject(responseText).optString("reply").trim()
             if (answer.isBlank()) {
                 AiGatewayResult.Failure(AiFailure.INVALID_RESPONSE)
             } else {
@@ -124,9 +123,10 @@ class SupabaseChatGateway(
 
     private companion object {
         const val MAX_MESSAGES = 30
-        const val MAX_MESSAGE_CHARS = 12_000
-        const val MAX_TOTAL_CHARS = 48_000
+        const val MAX_HISTORY_MESSAGES = 8
+        const val MAX_MESSAGE_CHARS = 3_000
+        const val MAX_TOTAL_CHARS = 24_000
         const val CONNECT_TIMEOUT_MS = 10_000
-        const val READ_TIMEOUT_MS = 50_000
+        const val READ_TIMEOUT_MS = 40_000
     }
 }
