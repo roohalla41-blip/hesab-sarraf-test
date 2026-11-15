@@ -45,7 +45,8 @@ class SupabaseChatGateway(
 
         val recentMessages = messages.takeLast(MAX_MESSAGES)
         if (recentMessages.isEmpty() || recentMessages.lastOrNull()?.fromUser != true ||
-            recentMessages.any { it.text.isBlank() || it.text.length > MAX_MESSAGE_CHARS }
+            recentMessages.any { it.text.isBlank() || it.text.length > MAX_MESSAGE_CHARS } ||
+            recentMessages.sumOf { it.text.length } > MAX_TOTAL_CHARS
         ) {
             return@withContext AiGatewayResult.Failure(AiFailure.INVALID_RESPONSE)
         }
@@ -112,6 +113,7 @@ class SupabaseChatGateway(
     private companion object {
         const val MAX_MESSAGES = 30
         const val MAX_MESSAGE_CHARS = 12_000
+        const val MAX_TOTAL_CHARS = 48_000
         const val CONNECT_TIMEOUT_MS = 10_000
         const val READ_TIMEOUT_MS = 50_000
     }
