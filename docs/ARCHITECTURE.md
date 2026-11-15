@@ -7,7 +7,7 @@
 4. **Tools:** file, image, web research, and coding tools are not implemented.
 5. **Voice:** speech input/output is not implemented.
 6. **Account and plans:** Google sign-in, guest identity, server quotas, subscriptions, and billing are not implemented.
-7. **Settings:** local preview preferences exist; full localization and system-language switching are not complete.
+7. **Settings:** light/dark themes are implemented and persisted locally; language choice is stored as a preference only, while full localization and system-language switching are not complete.
 8. **Privacy:** local-history controls are present; application-level encryption and data export are not implemented.
 
 ## Architecture boundaries
@@ -38,5 +38,5 @@
 - Google Sign-In for app account authentication.
 - Secure server authentication and durable guest quota.
 - Real AI gateway integration and provider failover.
-- Automated repository tests and Android build validation.
+- Execute the new automated repository tests and complete Android build validation.
 - Device testing, privacy review, accessibility, complete translations, signed AAB, Play Console policy declarations, and store assets.
