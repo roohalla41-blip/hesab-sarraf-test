@@ -136,6 +136,42 @@ class JsonChatHistoryRepositoryTest {
         assertTrue(repository.getMessages("one").isEmpty())
     }
 
+    @Test
+    fun ignoresMessagesForUnknownConversationIds() = runBlocking {
+        repository.saveMessage("missing-conversation", ChatMessage(1L, "orphan", true))
+
+        assertTrue(repository.getConversations().isEmpty())
+        assertTrue(repository.getMessages("missing-conversation").isEmpty())
+    }
+
+    @Test
+    fun truncatesOversizedTitlesAndMessageBodies() = runBlocking {
+        val item = conversation("long-title").copy(title = "T".repeat(120))
+        repository.saveConversation(item)
+        repository.saveMessage(item.id, ChatMessage(1L, "M".repeat(13_000), true))
+
+        assertEquals(80, repository.getConversations().single().title.length)
+        assertEquals(12_000, repository.getMessages(item.id).single().text.length)
+    }
+
+    @Test
+    fun serializesConcurrentMessageWritesWithoutLosingEntries() = runBlocking {
+        val item = conversation("concurrent")
+        repository.saveConversation(item)
+
+        kotlinx.coroutines.coroutineScope {
+            (1L..20L).map { id ->
+                kotlinx.coroutines.async(kotlinx.coroutines.Dispatchers.Default) {
+                    repository.saveMessage(item.id, ChatMessage(id, "message-$id", true))
+                }
+            }.forEach { it.await() }
+        }
+
+        val saved = repository.getMessages(item.id)
+        assertEquals(20, saved.size)
+        assertEquals((1L..20L).toSet(), saved.map { it.id }.toSet())
+    }
+
     private fun conversation(id: String, updatedAt: Long = 10L) = Conversation(
         id = id,
         title = id,
