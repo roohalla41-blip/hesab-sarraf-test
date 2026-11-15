@@ -125,6 +125,15 @@ object ChatStorage {
         preferences.edit().putString(KEY_ACTIVE_CONVERSATION, id).apply()
     }
 
+    fun renameConversation(context: Context, conversationId: String, newTitle: String) {
+        val cleanTitle = newTitle.trim().take(60)
+        if (cleanTitle.isBlank()) return
+        val updated = loadAll(context).map { conversation ->
+            if (conversation.id == conversationId) conversation.copy(title = cleanTitle) else conversation
+        }
+        saveAll(context, updated)
+    }
+
     fun deleteConversation(context: Context, conversationId: String) {
         val all = loadAll(context).filterNot { it.id == conversationId }
         saveAll(context, all)
