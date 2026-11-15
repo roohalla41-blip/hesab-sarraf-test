@@ -1,18 +1,17 @@
-# ATLAS AI — Localization Plan
+# ATLAS AI — Localization
 
-## First supported interface languages
-- Persian (fa): initial right-to-left interface.
-- English (en): left-to-right interface and international fallback.
-- Dari (prs): planned as a distinct language option, with terminology reviewed by native speakers.
+## Current Android behavior
+- The Android UI selects Persian when the device language is Persian (fa) or Dari (prs).
+- Other device languages currently use the English fallback.
+- Layout direction follows the device locale: right-to-left for RTL locales and left-to-right otherwise.
+- User-authored chat content is preserved as entered and is not automatically translated.
+- Gmail metadata labels and system status messages follow the same device-language selection.
 
-## Rules
-- Use Android resource qualifiers for translated interface text.
-- Determine layout direction from the selected language, not from a hard-coded device assumption.
-- Keep user-generated message content unchanged; do not auto-translate it without consent.
-- Store language preferences as BCP-47 tags.
-- Format dates, numbers, and currencies with locale-aware APIs.
-- Avoid concatenating translated fragments; use complete translatable sentences and placeholders.
-- Keep product brand names such as ATLAS AI unchanged across languages.
+## Current limitations
+- The current translation mapping is centralized in AtlasText; it is not yet fully extracted into Android resource files.
+- Dari currently uses the Persian text set; Dari-specific terminology and proofreading remain pending.
+- Date, number, and time formatting still needs a locale-aware review.
+- Switching the device language while the app is running may require restarting the app.
 
 ## Release quality
-Every supported language needs a complete string-resource audit, RTL/LTR layout review, accessibility review, and native-language proofreading before release. A language is not considered fully supported merely because a resource folder exists.
+Before release, extract all interface text into Android resources, verify every screen in Persian and English, review RTL/LTR layouts on physical devices, add native Dari translations if Dari is advertised, and complete accessibility and native-language proofreading.
