@@ -4,7 +4,7 @@ import java.util.Locale
 
 /**
  * Language and layout policy for the first multilingual release.
- * Android resource qualifiers select translated strings; this policy selects direction.
+ * AtlasText selects Persian/English copy; this policy selects layout direction.
  */
 object LocalePolicy {
     private val rtlLanguages = setOf("fa", "prs", "ar", "ur", "he")
