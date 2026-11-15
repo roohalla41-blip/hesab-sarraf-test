@@ -9,7 +9,7 @@ ATLAS AI is a multilingual, globally shareable AI assistant. The initial experie
 - **domain/repository** — contracts for history and assistant operations.
 - **domain/usecase** — user actions and orchestration.
 - **data/remote** — the server API boundary; provider keys remain server-side.
-- **data/local** — future on-device conversation storage.
+- **data/local** — private on-device conversation storage (currently SharedPreferences; transactional database migration remains a release task).
 - **feature/** — independent product areas and their UI state.
 
 ## Product areas
@@ -30,9 +30,9 @@ ATLAS AI is a multilingual, globally shareable AI assistant. The initial experie
 - Requests have bounded input sizes and explicit error states.
 
 ## Data strategy
-- Local conversation storage is separate from the AI provider.
+- Local conversation storage is separate from the AI provider. The current SharedPreferences store keeps up to 100 conversations and the newest 300 messages per conversation; older messages are automatically trimmed on save and when loading legacy/oversized history.
 - Cloud sync and account storage are postponed until the selected backend is authorized.
 - No production database, authentication, or server function is changed by this scaffold.
 
 ## Current status
-The Android screen is a UI foundation. AI gateway and history repository are contracts only; they are not connected to a live service or database. Voice, image, file, web, coding, account, and subscription capabilities must not be shown as active until implemented and tested.
+The Android app includes local multi-conversation history. Each conversation retains at most 300 messages, automatically removing the oldest when new messages arrive. This is local-only SharedPreferences storage; it is not a transactional database or cloud sync. The AI gateway is not connected to a live service. Voice, image, file, web, coding, account, and subscription capabilities must not be shown as active until implemented and tested.
