@@ -22,7 +22,7 @@
 - Clearing app data or uninstalling the app also removes the local history file.
 - If the main history JSON is malformed, the repository preserves one `.corrupt` recovery copy in private app storage before returning an empty history. Individual conversation deletion does not currently inspect or selectively edit this recovery copy. Clear-all removes it; if removal fails, the operation reports an error.
 - Writes now flush a same-directory temporary file and attempt an atomic replacement, falling back to a same-directory replacement operation rather than truncating the existing file directly. Filesystem guarantees still vary, and this behavior has not yet been device-tested.
-- The current repository has no configured automated test dependencies for this JSON persistence implementation; test coverage is a release blocker, not a completed check.
+- Automated Robolectric/JUnit tests are configured for JSON persistence, including retention, recovery, deletion, duplicate IDs, and concurrent writes. They have been authored but have not yet been executed; a passing test run remains a release gate.
 
 ## Local encryption decision
 - Do not silently encrypt or rename the existing history file in-place.
