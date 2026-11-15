@@ -28,7 +28,8 @@
 
 ## Local data protection
 - Current history is a bounded JSON file in Android private internal storage, without application-level encryption.
-- It keeps up to 40 conversations and 300 messages per conversation.
+- It keeps up to 40 conversations and 300 messages per conversation. When the message cap is exceeded, the oldest message IDs are trimmed automatically.
+- Conversation metadata and message append are persisted in one mutex-protected write; retained messages are ordered by monotonically increasing message ID so concurrent appends preserve the newest 300.
 - If the main JSON is malformed, one recovery copy is preserved in private app storage.
 - Clear-all writes an empty history before removing the recovery copy.
 - Local deletion, cloud account deletion, and provider retention are separate lifecycle concerns.
