@@ -110,6 +110,7 @@ class JsonChatHistoryRepositoryTest {
         assertEquals(40, repository.getConversations().size)
         val messages = repository.getMessages(latest.id)
         assertEquals(300, messages.size)
+        assertEquals(300, repository.getConversations().single().messageCount)
         assertEquals("message-5", messages.first().text)
         assertEquals("message-304", messages.last().text)
     }
