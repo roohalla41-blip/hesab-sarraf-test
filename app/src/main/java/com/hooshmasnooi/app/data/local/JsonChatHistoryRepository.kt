@@ -87,13 +87,8 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
             val duplicate = (0 until messages.length()).any {
                 messages.optJSONObject(it)?.optLong("id") == message.id
             }
-            if (!duplicate) {
-                messages.put(message.toJson())
-                while (messages.length() > MAX_MESSAGES_PER_CONVERSATION) {
-                    messages.remove(0)
-                }
-            }
-            stored.put(KEY_MESSAGES, messages)
+            if (!duplicate) messages.put(message.toJson())
+            stored.put(KEY_MESSAGES, trimMessages(messages))
             stored.put("messageCount", messages.length())
             stored.put(
                 "updatedAtEpochMillis",
@@ -120,10 +115,7 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                     }) return@withLock
 
                 messages.put(message.toJson())
-                while (messages.length() > MAX_MESSAGES_PER_CONVERSATION) {
-                    messages.remove(0)
-                }
-                conversation.put(KEY_MESSAGES, messages)
+                conversation.put(KEY_MESSAGES, trimMessages(messages))
                 conversation.put("messageCount", messages.length())
                 conversation.put("updatedAtEpochMillis", System.currentTimeMillis())
                 items.put(index, conversation)
@@ -200,6 +192,14 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
             // Keep the previous history intact and surface the failure to the UI.
             throw failure
         }
+    }
+
+    private fun trimMessages(source: JSONArray): JSONArray {
+        val retained = (0 until source.length())
+            .mapNotNull { source.optJSONObject(it) }
+            .sortedBy { it.optLong("id") }
+            .takeLast(MAX_MESSAGES_PER_CONVERSATION)
+        return JSONArray(retained)
     }
 
     private fun trimConversations(source: JSONArray): JSONArray {
