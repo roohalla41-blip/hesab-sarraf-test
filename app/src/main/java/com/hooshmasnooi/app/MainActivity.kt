@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -97,23 +98,48 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Color(0xFF173B63),
-                    onPrimary = Color.White,
-                    primaryContainer = Color(0xFFDCEBFA),
-                    onPrimaryContainer = Color(0xFF102C49),
-                    secondary = Color(0xFF168C91),
-                    secondaryContainer = Color(0xFFD6F1EF),
-                    background = Color(0xFFF7F9FC),
-                    surface = Color(0xFFFFFFFF),
-                    surfaceVariant = Color(0xFFEAF0F6),
-                    onSurface = Color(0xFF172536),
-                    onSurfaceVariant = Color(0xFF526273)
-                )
-            ) {
+            val themeSettings = remember {
+                getSharedPreferences("atlas_user_settings", android.content.Context.MODE_PRIVATE)
+            }
+            var darkTheme by remember {
+                mutableStateOf(themeSettings.getBoolean("dark_preview", false))
+            }
+            val lightColors = lightColorScheme(
+                primary = Color(0xFF173B63),
+                onPrimary = Color.White,
+                primaryContainer = Color(0xFFDCEBFA),
+                onPrimaryContainer = Color(0xFF102C49),
+                secondary = Color(0xFF168C91),
+                secondaryContainer = Color(0xFFD6F1EF),
+                background = Color(0xFFF7F9FC),
+                surface = Color(0xFFFFFFFF),
+                surfaceVariant = Color(0xFFEAF0F6),
+                onSurface = Color(0xFF172536),
+                onSurfaceVariant = Color(0xFF526273)
+            )
+            val darkColors = darkColorScheme(
+                primary = Color(0xFF9CC7F2),
+                onPrimary = Color(0xFF102C49),
+                primaryContainer = Color(0xFF294968),
+                onPrimaryContainer = Color(0xFFDCEBFA),
+                secondary = Color(0xFF83D5D0),
+                secondaryContainer = Color(0xFF174A4B),
+                background = Color(0xFF101820),
+                surface = Color(0xFF17232E),
+                surfaceVariant = Color(0xFF263746),
+                onSurface = Color(0xFFE6EDF4),
+                onSurfaceVariant = Color(0xFFB5C3D0)
+            )
+            MaterialTheme(colorScheme = if (darkTheme) darkColors else lightColors) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    AtlasApp(JsonChatHistoryRepository(applicationContext))
+                    AtlasApp(
+                        historyRepository = JsonChatHistoryRepository(applicationContext),
+                        darkPreview = darkTheme,
+                        onThemeToggle = {
+                            darkTheme = !darkTheme
+                            themeSettings.edit().putBoolean("dark_preview", darkTheme).apply()
+                        }
+                    )
                 }
             }
         }
@@ -122,7 +148,11 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AtlasApp(historyRepository: ChatHistoryRepository) {
+private fun AtlasApp(
+    historyRepository: ChatHistoryRepository,
+    darkPreview: Boolean,
+    onThemeToggle: () -> Unit
+) {
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
@@ -131,7 +161,6 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
     val settings = remember(context) {
         context.getSharedPreferences("atlas_user_settings", android.content.Context.MODE_PRIVATE)
     }
-    var darkPreview by remember { mutableStateOf(settings.getBoolean("dark_preview", false)) }
     var languagePreview by remember { mutableStateOf(settings.getString("language", "فارسی") ?: "فارسی") }
     var nextId by remember { mutableStateOf(System.currentTimeMillis()) }
     var currentConversationId by remember { mutableStateOf<String?>(null) }
@@ -385,10 +414,7 @@ private fun AtlasApp(historyRepository: ChatHistoryRepository) {
                 "plans" -> PlansPage(Modifier.fillMaxSize().padding(padding))
                 "settings" -> SettingsPage(
                     darkPreview,
-                    {
-                        darkPreview = !darkPreview
-                        settings.edit().putBoolean("dark_preview", darkPreview).apply()
-                    },
+                    onThemeToggle,
                     languagePreview,
                     {
                         languagePreview = it
