@@ -609,6 +609,10 @@ private fun AtlasApp(
                             nextId = (messages.maxOfOrNull { it.id } ?: 0L) + 1L
                         }
                         refreshConversations()
+                    },
+                    onRenameConversation = { selected, title ->
+                        ChatStorage.renameConversation(appContext, selected.id, title)
+                        refreshConversations()
                     }
                 )
                 "explore" -> FeaturePage(
@@ -967,12 +971,30 @@ private fun HistoryPage(
     activeConversationId: String,
     modifier: Modifier = Modifier,
     onOpenConversation: (StoredConversation) -> Unit,
-    onDeleteConversation: (StoredConversation) -> Unit
+    onDeleteConversation: (StoredConversation) -> Unit,
+    onRenameConversation: (StoredConversation, String) -> Unit
 ) {
     var pendingDelete by remember { mutableStateOf<StoredConversation?>(null) }
-    val visibleConversations = conversations.filter { it.messageCount > 0 }
+    var pendingRename by remember { mutableStateOf<StoredConversation?>(null) }
+    var renameText by remember { mutableStateOf("") }
+    var searchQuery by remember { mutableStateOf("") }
+    val visibleConversations = conversations.filter { conversation ->
+        conversation.messageCount > 0 && (
+            searchQuery.isBlank() ||
+                conversation.title.contains(searchQuery, ignoreCase = true) ||
+                conversation.messages.lastOrNull()?.text?.contains(searchQuery, ignoreCase = true) == true
+        )
+    }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle("تاریخچه گفت‌وگوها", "مکالمه‌های ذخیره‌شده روی همین دستگاه را باز کن، ادامه بده یا حذف کن.")
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            label = { Text("جست‌وجوی گفت‌وگو") }
+        )
+        Spacer(Modifier.height(10.dp))
         if (visibleConversations.isEmpty()) {
             EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال نخستین پیام، مکالمه در این بخش ذخیره می‌شود.")
         } else {
@@ -1013,6 +1035,10 @@ private fun HistoryPage(
                                 fontSize = 10.sp
                             )
                             Spacer(Modifier.weight(1f))
+                            TextButton(onClick = {
+                                renameText = conversation.title
+                                pendingRename = conversation
+                            }) { Text("تغییر نام") }
                             TextButton(onClick = { pendingDelete = conversation }) { Text("حذف") }
                             TextButton(onClick = { onOpenConversation(conversation) }) {
                                 Text(if (conversation.id == activeConversationId) "ادامه گفت‌وگو" else "بازکردن")
@@ -1027,6 +1053,29 @@ private fun HistoryPage(
             "تاریخچه فقط روی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.labelSmall
+        )
+    }
+    pendingRename?.let { selected ->
+        AlertDialog(
+            onDismissRequest = { pendingRename = null },
+            title = { Text("تغییر نام گفت‌وگو") },
+            text = {
+                OutlinedTextField(
+                    value = renameText,
+                    onValueChange = { renameText = it.take(60) },
+                    singleLine = true,
+                    label = { Text("نام گفت‌وگو") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onRenameConversation(selected, renameText)
+                    pendingRename = null
+                }, enabled = renameText.isNotBlank()) { Text("ذخیره") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRename = null }) { Text("انصراف") }
+            }
         )
     }
     pendingDelete?.let { selected ->
