@@ -17,9 +17,11 @@
 - [x] Multiple local conversations: create, open, continue, rename, search, and delete with confirmation
 - [x] Migration from the previous single-conversation local store
 - [x] Copy individual chat messages
+- [x] Automatic Persian/English selection from device locale and RTL/LTR layout direction
 - [x] Explicit user-facing state when the general AI engine is not connected
 - [ ] Replace the bounded SharedPreferences conversation store with a transactional local database
-- [ ] Complete resource-based localization and device-language policy
+- [ ] Extract all translations into Android resources and complete native localization review
+- [ ] Complete Dari-specific terminology and proofreading
 - [ ] Full chat actions: edit/resend, regenerate, stop, share, and feedback
 - [ ] Attachment picker and secure local staging
 - [ ] Accessibility and responsive-layout review
