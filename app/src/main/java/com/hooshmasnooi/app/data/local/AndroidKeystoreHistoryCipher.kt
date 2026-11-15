@@ -61,9 +61,15 @@ internal class AndroidKeystoreHistoryCipher : HistoryCipher {
         buffer.get(encrypted)
 
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(GCM_TAG_BITS, nonce))
+        cipher.init(Cipher.DECRYPT_MODE, getExistingKey(), GCMParameterSpec(GCM_TAG_BITS, nonce))
         cipher.updateAAD(AAD)
         return cipher.doFinal(encrypted)
+    }
+
+    private fun getExistingKey(): SecretKey {
+        val keyStore = KeyStore.getInstance(ANDROID_KEY_STORE).apply { load(null) }
+        return keyStore.getKey(KEY_ALIAS, null) as? SecretKey
+            ?: throw IllegalStateException("The local history encryption key is missing; refusing to replace it")
     }
 
     private fun getOrCreateKey(): SecretKey {
