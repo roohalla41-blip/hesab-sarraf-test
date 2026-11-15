@@ -12,7 +12,7 @@
 ## Current local history behavior
 - Conversation history is stored as JSON in a file under Android private internal app storage.
 - The current implementation is device-local and does not sync to Supabase or another cloud service.
-- Android app sandboxing restricts ordinary access by other apps; this implementation does not add application-level encryption.
+- New history writes are encrypted with AES-256-GCM. The non-exportable 256-bit key is generated and stored by Android Keystore; the key is not embedded in the APK or written beside the history file.
 - Users should not put passwords, API keys, or other secrets into chat messages.
 - Retention is bounded to the newest 40 conversations and 300 messages per conversation.
 - Users can delete one conversation from History after confirmation.
@@ -20,18 +20,18 @@
 - The Privacy and Security screen displays the local conversation count and explicitly states that application-level encryption, online sign-in, and AI service connection are not yet active.
 - There is no in-app export control.
 - Clearing app data or uninstalling the app also removes the local history file.
-- If the main history JSON is malformed, the repository preserves one `.corrupt` recovery copy in private app storage before returning an empty history. Individual conversation deletion does not currently inspect or selectively edit this recovery copy. Clear-all removes it; if removal fails, the operation reports an error.
-- Writes now flush a same-directory temporary file and attempt an atomic replacement, falling back to a same-directory replacement operation rather than truncating the existing file directly. Filesystem guarantees still vary, and this behavior has not yet been device-tested.
-- Automated Robolectric/JUnit tests are configured for JSON persistence, including retention, recovery, deletion, duplicate IDs, and concurrent writes. They have been authored but have not yet been executed; a passing test run remains a release gate.
+- Legacy JSON migration verifies the encrypted copy by decrypting it and comparing the original bytes before deleting the plaintext file. Malformed legacy JSON is preserved as an encrypted recovery file before an empty encrypted history is initialized. A pre-existing legacy `.corrupt` recovery file is also encrypted before its plaintext copy is removed. Clear-all removes encrypted recovery files after writing an empty encrypted history.
+- Encrypted writes use a same-directory temporary file, flush it, verify decryption before replacement, then atomically replace the target where supported. Filesystem guarantees still vary, and this behavior has not yet been device-tested.
+- Automated Robolectric/JUnit tests cover encrypted persistence through a deterministic test cipher, legacy migration, migration failure preservation, encrypted recovery, retention, deletion, duplicate IDs, and concurrent writes. They have been authored but have not yet been executed; a passing test run remains a release gate. The production Android Keystore implementation still requires on-device validation.
 
 ## Local encryption decision
-- Do not silently encrypt or rename the existing history file in-place.
+- Do not silently encrypt or rename the existing history file in-place. The implemented migration writes a separate encrypted file, verifies it, and only then removes the legacy plaintext file.
 - Before enabling encryption, implement and test a versioned migration that preserves existing plaintext history until the encrypted copy has been fully written and verified.
-- Use Android Keystore to protect a randomly generated AES-GCM key; never hard-code or export that key.
-- Include authenticated metadata (format version and nonce) and reject tampered ciphertext safely.
+- Android Keystore now protects a randomly generated AES-256-GCM key; the key is non-exportable and is not hard-coded.
+- The encrypted file includes a format marker/version and nonce; AES-GCM authentication rejects modified ciphertext. Missing keys fail closed rather than generating a replacement key.
 - Define recovery behavior for missing/invalid Keystore keys, app restore, device transfer, and interrupted migration.
 - Keep a recoverable backup until verification succeeds; then apply a documented cleanup policy.
-- This is a design requirement, not an implemented feature.
+- Recovery from a missing, invalidated, or hardware-reset Keystore key remains a documented limitation; the app must not silently reset encrypted history. This implementation still requires physical-device testing.
 
 ## Account and session principles
 - Authentication is not implemented in the current scaffold.
