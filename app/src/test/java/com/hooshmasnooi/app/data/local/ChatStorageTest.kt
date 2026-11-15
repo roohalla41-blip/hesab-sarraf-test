@@ -67,6 +67,18 @@ class ChatStorageTest {
     }
 
     @Test
+    fun storageRetainsAtMostOneHundredMostRecentConversations() {
+        val createdIds = (1..105).map {
+            ChatStorage.createConversation(context).id
+        }
+
+        val saved = ChatStorage.loadAll(context)
+        assertEquals(100, saved.size)
+        assertEquals(false, saved.any { it.id == createdIds.first() })
+        assertEquals(true, saved.any { it.id == createdIds.last() })
+    }
+
+    @Test
     fun savingMoreThanLimitKeepsNewestThreeHundredMessages() {
         val conversation = ChatStorage.createConversation(context)
         val messages = (1L..350L).map { id ->
