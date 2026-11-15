@@ -29,6 +29,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.AlertDialog
@@ -64,13 +65,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hooshmasnooi.app.data.local.JsonChatHistoryRepository
 import com.hooshmasnooi.app.domain.model.ChatMessage
+import com.hooshmasnooi.app.domain.model.Conversation
+import com.hooshmasnooi.app.domain.repository.ChatHistoryRepository
+import java.util.UUID
 import kotlinx.coroutines.launch
 
 private data class AtlasPage(val id: String, val title: String, val symbol: String)
@@ -107,7 +113,7 @@ class MainActivity : ComponentActivity() {
                 )
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                    AtlasApp()
+                    AtlasApp(JsonChatHistoryRepository(applicationContext))
                 }
             }
         }
@@ -116,23 +122,89 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AtlasApp() {
+private fun AtlasApp(historyRepository: ChatHistoryRepository) {
     var currentPage by remember { mutableStateOf("chat") }
     var input by remember { mutableStateOf("") }
     var showStatus by remember { mutableStateOf(false) }
-    var darkPreview by remember { mutableStateOf(false) }
-    var languagePreview by remember { mutableStateOf("فارسی") }
-    var nextId by remember { mutableStateOf(1L) }
+    var historyError by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val settings = remember(context) {
+        context.getSharedPreferences("atlas_user_settings", android.content.Context.MODE_PRIVATE)
+    }
+    var darkPreview by remember { mutableStateOf(settings.getBoolean("dark_preview", false)) }
+    var languagePreview by remember { mutableStateOf(settings.getString("language", "فارسی") ?: "فارسی") }
+    var nextId by remember { mutableStateOf(System.currentTimeMillis()) }
+    var currentConversationId by remember { mutableStateOf<String?>(null) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
+    val conversations = remember { mutableStateListOf<Conversation>() }
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     fun sendMessage(rawText: String) {
         val cleanText = rawText.trim()
-        if (cleanText.isNotEmpty()) {
-            messages.add(ChatMessage(nextId++, cleanText, true))
-            input = ""
+        if (cleanText.isBlank()) return
+
+        val now = System.currentTimeMillis()
+        val conversationId = currentConversationId ?: UUID.randomUUID().toString().also {
+            currentConversationId = it
+        }
+        val existing = conversations.firstOrNull { it.id == conversationId }
+        val message = ChatMessage(nextId++, cleanText, true)
+        val conversation = Conversation(
+            id = conversationId,
+            title = existing?.title ?: cleanText.take(48),
+            createdAtEpochMillis = existing?.createdAtEpochMillis ?: now,
+            updatedAtEpochMillis = now,
+            messageCount = existing?.messageCount ?: 0,
+            isPinned = existing?.isPinned ?: false
+        )
+
+        messages.add(message)
+        input = ""
+        scope.launch {
+            runCatching {
+                historyRepository.saveConversation(conversation)
+                historyRepository.saveMessage(conversationId, message)
+                val refreshed = historyRepository.getConversations()
+                conversations.clear()
+                conversations.addAll(refreshed)
+            }.onFailure {
+                historyError = "ذخیره گفت‌وگو انجام نشد. فضای دستگاه و دسترسی برنامه را بررسی کنید."
+            }
+        }
+    }
+
+    fun openConversation(conversationId: String) {
+        scope.launch {
+            runCatching {
+                val savedMessages = historyRepository.getMessages(conversationId)
+                messages.clear()
+                messages.addAll(savedMessages)
+                currentConversationId = conversationId
+                nextId = (savedMessages.maxOfOrNull { it.id } ?: System.currentTimeMillis()) + 1
+                input = ""
+                currentPage = "chat"
+            }.onFailure {
+                historyError = "بازیابی این گفت‌وگو انجام نشد. دوباره تلاش کنید."
+            }
+        }
+    }
+
+    LaunchedEffect(historyRepository) {
+        runCatching {
+            val saved = historyRepository.getConversations()
+            conversations.clear()
+            conversations.addAll(saved)
+            saved.firstOrNull()?.let { latest ->
+                val savedMessages = historyRepository.getMessages(latest.id)
+                messages.clear()
+                messages.addAll(savedMessages)
+                currentConversationId = latest.id
+                nextId = (savedMessages.maxOfOrNull { it.id } ?: System.currentTimeMillis()) + 1
+            }
+        }.onFailure {
+            historyError = "خواندن تاریخچه انجام نشد. لطفاً برنامه را دوباره باز کنید."
         }
     }
 
@@ -192,6 +264,7 @@ private fun AtlasApp() {
                     actions = {
                         IconButton(onClick = {
                             messages.clear()
+                            currentConversationId = null
                             input = ""
                             currentPage = "chat"
                         }) {
@@ -253,7 +326,37 @@ private fun AtlasApp() {
                 "chat" -> ChatPage(messages, listState, Modifier.fillMaxSize().padding(padding)) {
                     sendMessage(it)
                 }
-                "history" -> HistoryPage(messages, Modifier.fillMaxSize().padding(padding))
+                "history" -> HistoryPage(
+                    conversations,
+                    Modifier.fillMaxSize().padding(padding),
+                    ::openConversation,
+                    { conversationId ->
+                        scope.launch {
+                            runCatching {
+                                historyRepository.deleteConversation(conversationId)
+                                conversations.removeAll { it.id == conversationId }
+                                if (currentConversationId == conversationId) {
+                                    currentConversationId = null
+                                    messages.clear()
+                                }
+                            }.onFailure {
+                                historyError = "حذف گفت‌وگو انجام نشد. دوباره تلاش کنید."
+                            }
+                        }
+                    },
+                    {
+                        scope.launch {
+                            runCatching {
+                                historyRepository.deleteAllConversations()
+                                conversations.clear()
+                                messages.clear()
+                                currentConversationId = null
+                            }.onFailure {
+                                historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                            }
+                        }
+                    }
+                )
                 "explore" -> FeaturePage(
                     "کاوش دستیارها",
                     "حالت‌های کاری تخصصی برای نیازهای مختلف.",
@@ -282,25 +385,48 @@ private fun AtlasApp() {
                 "plans" -> PlansPage(Modifier.fillMaxSize().padding(padding))
                 "settings" -> SettingsPage(
                     darkPreview,
-                    { darkPreview = !darkPreview },
+                    {
+                        darkPreview = !darkPreview
+                        settings.edit().putBoolean("dark_preview", darkPreview).apply()
+                    },
                     languagePreview,
-                    { languagePreview = it },
+                    {
+                        languagePreview = it
+                        settings.edit().putString("language", it).apply()
+                    },
                     Modifier.fillMaxSize().padding(padding)
                 )
-                "privacy" -> FeaturePage(
-                    "حریم خصوصی و امنیت",
-                    "اصول لازم پیش از اتصال سرویس‌ها.",
-                    listOf(
-                        "کلیدهای محرمانه" to "فقط در Secret Manager سمت سرور نگهداری می‌شوند.",
-                        "حداقل‌سازی داده" to "فقط داده ضروری جمع‌آوری می‌شود.",
-                        "کنترل کاربر" to "مدیریت و حذف داده‌ها در طراحی لحاظ می‌شود.",
-                        "ارتباط امن" to "احراز هویت و محدودیت درخواست در سمت سرور."
-                    ),
-                    Modifier.fillMaxSize().padding(padding)
+                "privacy" -> PrivacyPage(
+                    conversationCount = conversations.size,
+                    onManageHistory = { currentPage = "history" },
+                    onDeleteAll = {
+                        scope.launch {
+                            runCatching {
+                                historyRepository.deleteAllConversations()
+                                conversations.clear()
+                                messages.clear()
+                                currentConversationId = null
+                            }.onFailure {
+                                historyError = "پاک‌کردن تاریخچه انجام نشد. دوباره تلاش کنید."
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize().padding(padding)
                 )
                 else -> HelpPage(Modifier.fillMaxSize().padding(padding))
             }
         }
+    }
+
+    if (historyError != null) {
+        AlertDialog(
+            onDismissRequest = { historyError = null },
+            title = { Text("خطا در تاریخچه") },
+            text = { Text(historyError.orEmpty()) },
+            confirmButton = {
+                TextButton(onClick = { historyError = null }) { Text("متوجه شدم") }
+            }
+        )
     }
 
     if (showStatus) {
@@ -310,9 +436,10 @@ private fun AtlasApp() {
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("ساختار صفحات: در حال تکمیل")
+                    Text("تاریخچه گفت‌وگو: ذخیره محلی روی دستگاه فعال است")
                     Text("زبان پیش‌نمایش: " + languagePreview)
                     Text("هوش مصنوعی: هنوز متصل نشده")
-                    Text("دیتابیس و حساب آنلاین: هنوز متصل نشده")
+                    Text("دیتابیس ابری و حساب آنلاین: هنوز متصل نشده")
                     Text("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد")
                     Text("هیچ APK یا Build در این مرحله اجرا نشده است.")
                 }
@@ -419,19 +546,99 @@ private fun SuggestionCard(icon: String, title: String, description: String, onC
 }
 
 @Composable
-private fun HistoryPage(messages: List<ChatMessage>, modifier: Modifier = Modifier) {
+private fun HistoryPage(
+    conversations: List<Conversation>,
+    modifier: Modifier = Modifier,
+    onConversationClick: (String) -> Unit,
+    onDeleteConversation: (String) -> Unit,
+    onDeleteAll: () -> Unit
+) {
+    var pendingDelete by remember { mutableStateOf<Conversation?>(null) }
+    var confirmDeleteAll by remember { mutableStateOf(false) }
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle("تاریخچه گفت‌وگوها", "پیام‌های این نشست در حافظه موقت نمایش داده می‌شوند.")
-        if (messages.isEmpty()) {
-            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با شروع یک گفت‌وگو، پیام‌های این نشست اینجا دیده می‌شوند.")
+        PageTitle(
+            "تاریخچه گفت‌وگوها",
+            "گفت‌وگوها به‌صورت محلی در حافظه خصوصی برنامه ذخیره می‌شوند."
+        )
+        if (conversations.isEmpty()) {
+            EmptyCard("هنوز گفت‌وگویی وجود ندارد", "با ارسال اولین پیام، گفت‌وگوی شما اینجا ذخیره می‌شود.")
         } else {
-            messages.forEach { message ->
-                InfoCard("پیام " + message.id, message.text)
-                Spacer(Modifier.height(8.dp))
+            TextButton(onClick = { confirmDeleteAll = true }) {
+                Text("پاک‌کردن همه تاریخچه", color = MaterialTheme.colorScheme.error)
+            }
+            conversations.forEach { conversation ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Card(
+                        onClick = { onConversationClick(conversation.id) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                        )
+                    ) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(conversation.title, fontWeight = FontWeight.SemiBold)
+                            Spacer(Modifier.height(5.dp))
+                            Text(
+                                "${conversation.messageCount} پیام",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    IconButton(onClick = { pendingDelete = conversation }) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "حذف گفت‌وگو",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
             }
         }
-        Text("ذخیره دائمی و همگام‌سازی ابری هنوز فعال نیست.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+        Text(
+            "این تاریخچه فقط روی همین دستگاه است؛ همگام‌سازی ابری هنوز فعال نیست.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+
+    if (confirmDeleteAll) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteAll = false },
+            title = { Text("پاک‌کردن همه تاریخچه؟") },
+            text = { Text("تمام گفت‌وگوها و پیام‌های ذخیره‌شده روی این دستگاه حذف می‌شوند. این کار قابل بازگشت نیست.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteAll()
+                    confirmDeleteAll = false
+                }) { Text("پاک‌کردن همه", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteAll = false }) { Text("انصراف") }
+            }
+        )
+    }
+
+    pendingDelete?.let { conversation ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("حذف گفت‌وگو؟") },
+            text = { Text("تمام پیام‌های «${conversation.title}» از این دستگاه حذف می‌شوند.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteConversation(conversation.id)
+                    pendingDelete = null
+                }) { Text("حذف", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("انصراف") }
+            }
+        )
     }
 }
 
@@ -450,6 +657,81 @@ private fun FeaturePage(
         }
         Text("این بخش در مرحله ساختار است و قابلیت عملیاتی آن هنوز فعال نشده است.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+
+@Composable
+private fun PrivacyPage(
+    conversationCount: Int,
+    onManageHistory: () -> Unit,
+    onDeleteAll: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var confirmDeleteAll by remember { mutableStateOf(false) }
+    Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
+        PageTitle(
+            "حریم خصوصی و امنیت",
+            "کنترل داده‌های ذخیره‌شده در همین دستگاه و شفافیت درباره قابلیت‌های هنوز فعال‌نشده."
+        )
+        InfoCard(
+            "ذخیره‌سازی فعلی",
+            "تاریخچه گفت‌وگوها در حافظه خصوصی برنامه روی همین دستگاه نگهداری می‌شود؛ همگام‌سازی ابری فعال نیست."
+        )
+        InfoCard(
+            "وضعیت تاریخچه",
+            "$conversationCount گفت‌وگو در فهرست محلی برنامه"
+        )
+        InfoCard(
+            "رمزنگاری اختصاصی",
+            "رمزنگاری جداگانه برای فایل تاریخچه هنوز پیاده‌سازی و روی دستگاه آزمایش نشده است."
+        )
+        InfoCard(
+            "حساب و سرویس آنلاین",
+            "ورود آنلاین و اتصال موتور هوش مصنوعی هنوز فعال نیست؛ هیچ کلید ارائه‌دهنده هوش مصنوعی نباید داخل برنامه قرار گیرد."
+        )
+        InfoCard(
+            "کلیدها و ارتباط امن",
+            "در زمان راه‌اندازی سرویس، کلیدهای ارائه‌دهنده باید فقط در Secret Manager سمت سرور بمانند و درخواست‌ها از مسیر امن احراز هویت‌شده عبور کنند."
+        )
+        Spacer(Modifier.height(8.dp))
+        Button(onClick = onManageHistory, modifier = Modifier.fillMaxWidth()) {
+            Text("مدیریت تاریخچه گفت‌وگوها")
+        }
+        Spacer(Modifier.height(8.dp))
+        TextButton(
+            onClick = { confirmDeleteAll = true },
+            enabled = conversationCount > 0,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("پاک‌کردن همه داده‌های تاریخچه", color = MaterialTheme.colorScheme.error)
+        }
+        Text(
+            "توجه: حذف تاریخچه، فایل پشتیبان بازیابیِ احتمالیِ مربوط به فایل خراب را نیز در صورت وجود پاک می‌کند. این کار قابل بازگشت نیست.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+
+    if (confirmDeleteAll) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteAll = false },
+            title = { Text("حذف دائمی تاریخچه؟") },
+            text = {
+                Text("همه گفت‌وگوها و پیام‌های محلی و نسخه پشتیبان بازیابیِ احتمالی حذف می‌شوند. این عملیات قابل بازگشت نیست.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteAll()
+                    confirmDeleteAll = false
+                }) {
+                    Text("حذف دائمی", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDeleteAll = false }) { Text("انصراف") }
+            }
+        )
     }
 }
 
@@ -492,9 +774,13 @@ private fun SettingsPage(
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
         PageTitle("تنظیمات", "گزینه‌های پایه برای آماده‌سازی تجربه کاربری.")
         InfoCard("ظاهر برنامه", if (darkPreview) "حالت تاریک انتخاب شده (پیش‌نمایش)" else "حالت روشن انتخاب شده (پیش‌نمایش)")
+        Text("انتخاب ظاهر روی همین دستگاه ذخیره می‌شود؛ تغییر کامل رنگ‌بندی در مرحله بعد تکمیل می‌شود.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = onThemeToggle, modifier = Modifier.fillMaxWidth()) { Text("تغییر حالت نمایشی") }
         Spacer(Modifier.height(12.dp))
-        InfoCard("زبان رابط", "زبان فعلی: " + language)
+        InfoCard("زبان رابط", "زبان انتخاب‌شده: " + language)
+        Text("انتخاب زبان ذخیره می‌شود؛ ترجمه کامل همه صفحه‌ها و تغییر خودکار بر اساس زبان دستگاه هنوز تکمیل نشده است.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { onLanguageChange("فارسی") }) { Text("فارسی") }
             Button(onClick = { onLanguageChange("English (planned)") }) { Text("English") }
@@ -512,7 +798,7 @@ private fun HelpPage(modifier: Modifier = Modifier) {
         PageTitle("راهنما و پشتیبانی", "پاسخ به پرسش‌های پایه درباره نسخه ساختاری اطلس.")
         InfoCard("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.")
         InfoCard("آیا برای دیدن ساختار کلید لازم است؟", "خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.")
-        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "خیر؛ این نسخه فقط ساختار نمایشی است.")
+        InfoCard("آیا داده‌ها ذخیره می‌شوند؟", "تاریخچه گفت‌وگوها به‌صورت محلی در حافظه خصوصی همین دستگاه ذخیره می‌شود؛ همگام‌سازی ابری فعال نیست.")
         InfoCard("پشتیبانی", "راه ارتباطی رسمی در زمان آماده‌سازی انتشار اضافه خواهد شد.")
     }
 }
