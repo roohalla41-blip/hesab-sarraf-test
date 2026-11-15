@@ -55,10 +55,17 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                 val encoded = conversation.toJson()
                 if (existing >= 0) {
                     val old = items.getJSONObject(existing)
-                    encoded.put(KEY_MESSAGES, old.optJSONArray(KEY_MESSAGES) ?: JSONArray())
+                    val oldMessages = old.optJSONArray(KEY_MESSAGES) ?: JSONArray()
+                    encoded.put(KEY_MESSAGES, oldMessages)
+                    encoded.put("messageCount", oldMessages.length())
+                    encoded.put(
+                        "updatedAtEpochMillis",
+                        maxOf(old.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis)
+                    )
                     items.put(existing, encoded)
                 } else {
                     encoded.put(KEY_MESSAGES, JSONArray())
+                    encoded.put("messageCount", 0)
                     items.put(encoded)
                 }
                 root.put(KEY_CONVERSATIONS, trimConversations(items))
@@ -93,7 +100,7 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
             stored.put("messageCount", retainedMessages.length())
             stored.put(
                 "updatedAtEpochMillis",
-                maxOf(conversation.updatedAtEpochMillis, System.currentTimeMillis())
+                maxOf(stored.optLong("updatedAtEpochMillis"), conversation.updatedAtEpochMillis, System.currentTimeMillis())
             )
             if (index >= 0) items.put(index, stored) else items.put(stored)
             root.put(KEY_CONVERSATIONS, trimConversations(items))
@@ -119,7 +126,10 @@ class JsonChatHistoryRepository(context: Context) : ChatHistoryRepository {
                 val retainedMessages = trimMessages(messages)
                 conversation.put(KEY_MESSAGES, retainedMessages)
                 conversation.put("messageCount", retainedMessages.length())
-                conversation.put("updatedAtEpochMillis", System.currentTimeMillis())
+                conversation.put(
+                    "updatedAtEpochMillis",
+                    maxOf(conversation.optLong("updatedAtEpochMillis"), System.currentTimeMillis())
+                )
                 items.put(index, conversation)
                 root.put(KEY_CONVERSATIONS, items)
                 writeRoot(root)
