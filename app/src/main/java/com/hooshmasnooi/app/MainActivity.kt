@@ -942,12 +942,13 @@ private fun MessageBubble(message: ChatMessage) {
                 color = if (message.fromUser) Color(0xFF29345B)
                     else MaterialTheme.colorScheme.surfaceVariant
             ) {
-                Text(message.text, modifier = Modifier.padding(15.dp),
+                Text(
+                    message.text,
+                    modifier = Modifier.padding(15.dp),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface)
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
-    }
-}}
     }
 }
