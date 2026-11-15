@@ -99,6 +99,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hooshmasnooi.app.domain.model.ChatMessage
 import com.hooshmasnooi.app.core.AtlasText
+import com.hooshmasnooi.app.core.AtlasConfig
+import com.hooshmasnooi.app.data.remote.AccessTokenProvider
+import com.hooshmasnooi.app.data.remote.AiFailure
+import com.hooshmasnooi.app.data.remote.AiGatewayResult
+import com.hooshmasnooi.app.data.remote.SupabaseChatGateway
 import com.hooshmasnooi.app.core.LocalePolicy
 import com.hooshmasnooi.app.data.local.ChatStorage
 import com.hooshmasnooi.app.data.local.StoredConversation
@@ -378,6 +383,13 @@ private fun AtlasApp(
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val aiGateway = remember {
+        SupabaseChatGateway(
+            supabaseUrl = AtlasConfig.SUPABASE_URL,
+            anonKey = AtlasConfig.SUPABASE_PUBLISHABLE_KEY,
+            accessTokenProvider = AccessTokenProvider { null }
+        )
+    }
 
     fun refreshConversations() {
         conversations.clear()
@@ -413,14 +425,33 @@ private fun AtlasApp(
                     persistCurrentConversation()
                 }
             } else {
-                messages.add(
-                    ChatMessage(
-                        nextId++,
-                        AtlasText.of("پیام شما در اطلس ذخیره شد؛ اما موتور هوش مصنوعی عمومی هنوز متصل نشده است. تا زمان تکمیل اتصال مدل، پاسخ‌گویی عمومی فعال نیست. قابلیت عملیاتی فعلی Gmail فقط پس از اتصال حساب قابل استفاده است.", "Your message was saved in ATLAS, but the general AI engine is not connected yet. General answers will be available after the model connection is completed. The current Gmail feature works after you connect an account."),
-                        false
-                    )
-                )
+                val requestMessages = messages.toList()
+                val requestConversationId = activeConversationId
+                val pendingId = nextId++
+                messages.add(ChatMessage(pendingId, AtlasText.of("در حال دریافت پاسخ از اطلس...", "ATLAS is generating a response..."), false))
                 persistCurrentConversation()
+                scope.launch {
+                    val result = aiGateway.complete(requestMessages, requestConversationId)
+                    val answer = when (result) {
+                        is AiGatewayResult.Success -> result.answer
+                        is AiGatewayResult.Failure -> when (result.reason) {
+                            AiFailure.NOT_CONFIGURED -> AtlasText.of("سرویس هوش مصنوعی روی سرور تنظیم نشده است. لطفاً بعداً دوباره تلاش کن.", "The AI service is not configured on the server yet. Please try again later.")
+                            AiFailure.UNAUTHORIZED -> AtlasText.of("دسترسی به سرویس اطلس مجاز نیست. وضعیت اتصال را بررسی کن.", "Access to the ATLAS service was denied. Please check the connection.")
+                            AiFailure.RATE_LIMITED -> AtlasText.of("درخواست‌ها زیاد شده است؛ کمی بعد دوباره تلاش کن.", "Too many requests. Please try again shortly.")
+                            AiFailure.NETWORK -> AtlasText.of("اتصال اینترنت برقرار نشد. اتصال خود را بررسی و دوباره تلاش کن.", "The network connection failed. Check your connection and try again.")
+                            AiFailure.SERVER -> AtlasText.of("سرویس هوش مصنوعی موقتاً پاسخ نمی‌دهد. کمی بعد دوباره تلاش کن.", "The AI service is temporarily unavailable. Please try again shortly.")
+                            AiFailure.INVALID_RESPONSE -> AtlasText.of("پاسخ دریافتی معتبر نبود. دوباره تلاش کن.", "The response was invalid. Please try again.")
+                            AiFailure.UNKNOWN -> AtlasText.of("در دریافت پاسخ خطایی رخ داد. دوباره تلاش کن.", "An error occurred while receiving the response. Please try again.")
+                        }
+                    }
+                    if (activeConversationId == requestConversationId) {
+                        val pendingIndex = messages.indexOfFirst { it.id == pendingId }
+                        if (pendingIndex >= 0) {
+                            messages[pendingIndex] = ChatMessage(pendingId, answer, false)
+                        }
+                        persistCurrentConversation()
+                    }
+                }
             }
         }
     }
@@ -754,7 +785,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
                 Box(Modifier.size(8.dp).background(Color(0xFFFFC66D), CircleShape))
                 Spacer(Modifier.width(9.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(AtlasText.of("نسخه آزمایشی", "Preview build"), color = Color(0xFFEAF1FC), fontSize = 12.sp,
+                    Text(AtlasText.of("نسخه آنلاین", "Preview build"), color = Color(0xFFEAF1FC), fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold)
                     Text(AtlasText.of("برخی ابزارها هنوز به سرویس واقعی متصل نیستند", "Some tools are not connected to live services yet"),
                         color = Color(0xFF91A5BF), fontSize = 10.sp)
@@ -804,7 +835,7 @@ private fun WelcomeContent(modifier: Modifier = Modifier, onPromptClick: (String
             }
             Spacer(Modifier.height(9.dp))
         }
-        Text(AtlasText.of("قابلیت‌های نمایشی تا زمان اتصال و آزمون سرویس مربوطه فعال نیستند.", "Preview features remain inactive until their services are connected and tested."),
+        Text(AtlasText.of("قابلیت‌هایی که سرویس اختصاصی آن‌ها هنوز متصل نشده است، در حال توسعه هستند.", "Preview features remain inactive until their services are connected and tested."),
             color = Color(0xFF8195AE), fontSize = 10.sp,
             modifier = Modifier.padding(top = 7.dp, bottom = 12.dp))
     }
@@ -834,7 +865,7 @@ private fun AtlasToolCard(
                     }
                 }
                 Spacer(Modifier.weight(1f))
-                Text(AtlasText.of("آماده‌سازی", "In preparation"), fontSize = 8.sp, color = Color(0xFF91A5BF))
+                Text(AtlasText.of("در حال توسعه", "In preparation"), fontSize = 8.sp, color = Color(0xFF91A5BF))
             }
             Column {
                 Text(title, color = Color(0xFFEAF1FC), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
@@ -920,7 +951,7 @@ private fun IntegrationsPage(
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text(AtlasText.of("موتور هوش مصنوعی اطلس", "ATLAS AI engine"), fontWeight = FontWeight.Bold)
-                        Text(AtlasText.of("مسیر چندارائه‌دهنده آماده‌سازی شده", "Multi-provider routing prepared"),
+                        Text(AtlasText.of("مسیر چندارائه‌دهنده در حال توسعه شده", "Multi-provider routing prepared"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                     Text(AtlasText.of("غیرفعال", "Inactive"), color = MaterialTheme.colorScheme.error,
@@ -1228,7 +1259,7 @@ private fun ProfilePage(modifier: Modifier = Modifier) {
 @Composable
 private fun PlansPage(modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()).padding(18.dp)) {
-        PageTitle(AtlasText.of("طرح‌های اشتراک", "Plans"), AtlasText.of("طرح‌ها نمایشی هستند؛ قیمت و پرداخت هنوز تعریف نشده است.", "Plans are previews; pricing and payments are not configured."))
+        PageTitle(AtlasText.of("طرح‌های اشتراک", "Plans"), AtlasText.of("طرح‌های اشتراک در حال نهایی‌شدن هستند؛ قیمت و پرداخت هنوز تعریف نشده است.", "Plans are previews; pricing and payments are not configured."))
         listOf(
             AtlasText.of("رایگان", "Free") to AtlasText.of("گفت‌وگوی پایه و سهمیه محدود پس از اتصال", "Basic chat and limited quota after connection"),
             AtlasText.of("پلاس", "Plus") to AtlasText.of("سهمیه بیشتر و مدل‌های پیشرفته‌تر", "Higher quota and advanced models"),
@@ -1333,7 +1364,7 @@ private fun HelpPage(modifier: Modifier = Modifier) {
         InfoCard(AtlasText.of("آیا اطلس پاسخ هوش مصنوعی می‌دهد؟", "Does ATLAS provide AI answers?"), AtlasText.of("خیر؛ موتور هوش مصنوعی هنوز متصل نشده است.", "Not yet; the AI engine is not connected."))
         InfoCard(AtlasText.of("آیا برای دیدن ساختار کلید لازم است؟", "Do I need a key to view the app structure?"), AtlasText.of("خیر؛ طراحی و نمایش صفحات بدون کلید انجام می‌شود.", "No; the UI and screens work without API keys."))
         InfoCard(AtlasText.of("آیا داده‌ها ذخیره می‌شوند؟", "Is my data stored?"), AtlasText.of("پیام‌های گفت‌وگو به‌صورت محلی و خصوصی روی همین دستگاه ذخیره می‌شوند.", "Chat messages are stored locally in the private app storage on this device."))
-        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("راه ارتباطی رسمی در زمان آماده‌سازی انتشار اضافه خواهد شد.", "Official support contact details will be added before release."))
+        InfoCard(AtlasText.of("پشتیبانی", "Support"), AtlasText.of("راه ارتباطی رسمی در زمان در حال توسعه انتشار اضافه خواهد شد.", "Official support contact details will be added before release."))
     }
 }
 
