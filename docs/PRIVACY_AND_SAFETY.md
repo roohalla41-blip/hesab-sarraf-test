@@ -9,6 +9,11 @@
 6. Do not place secrets, credentials, or sensitive user content in application logs.
 7. Treat uploaded files as private user data; validate and restrict access.
 
+## Local chat history retention
+- Chat history is stored locally in the app's private SharedPreferences file.
+- Each conversation retains at most 300 messages. When the limit is exceeded, the oldest messages are automatically removed and the newest 300 are retained.
+- This limit is a retention policy, not a cloud backup or cross-device synchronization feature.
+
 ## Account and session principles
 - Authentication is not implemented in the current scaffold.
 - Session tokens, when introduced, must use platform-appropriate secure storage.
