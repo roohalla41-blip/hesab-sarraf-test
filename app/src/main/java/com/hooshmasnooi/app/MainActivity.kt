@@ -168,6 +168,7 @@ private fun AtlasApp(
     var languagePreview by remember { mutableStateOf(settings.getString("language", "فارسی") ?: "فارسی") }
     var nextId by remember { mutableStateOf(System.currentTimeMillis()) }
     var currentConversationId by remember { mutableStateOf<String?>(null) }
+    var historyReady by remember { mutableStateOf(false) }
     val messages = remember { mutableStateListOf<ChatMessage>() }
     val conversations = remember { mutableStateListOf<Conversation>() }
     val listState = rememberLazyListState()
@@ -178,7 +179,7 @@ private fun AtlasApp(
 
     fun sendMessage(rawText: String) {
         val cleanText = rawText.trim()
-        if (cleanText.isBlank()) return
+        if (cleanText.isBlank() || !historyReady) return
 
         val now = System.currentTimeMillis()
         val conversationId = currentConversationId ?: UUID.randomUUID().toString().also {
@@ -246,6 +247,7 @@ private fun AtlasApp(
         }.onFailure {
             historyError = "خواندن تاریخچه انجام نشد. لطفاً برنامه را دوباره باز کنید."
         }
+        historyReady = true
     }
 
     LaunchedEffect(messages.size) {
@@ -328,7 +330,8 @@ private fun AtlasApp(
                                 value = input,
                                 onValueChange = { input = it },
                                 modifier = Modifier.weight(1f),
-                                placeholder = { Text("پیام خود را بنویسید...") },
+                                placeholder = { Text(if (historyReady) "پیام خود را بنویسید..." else "در حال بازیابی تاریخچه...") },
+                                enabled = historyReady,
                                 shape = RoundedCornerShape(24.dp),
                                 maxLines = 4,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -337,7 +340,7 @@ private fun AtlasApp(
                             Spacer(Modifier.width(8.dp))
                             IconButton(
                                 onClick = { sendMessage(input) },
-                                enabled = input.isNotBlank(),
+                                enabled = historyReady && input.isNotBlank(),
                                 modifier = Modifier.size(52.dp).background(
                                     if (input.isNotBlank()) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.surfaceVariant,
@@ -353,7 +356,7 @@ private fun AtlasApp(
                             }
                         }
                         Text(
-                            "پیش‌نمایش ساختاری؛ هوش مصنوعی هنوز متصل نیست و پاسخی تولید نمی‌شود.",
+                            if (historyReady) "پیش‌نمایش ساختاری؛ هوش مصنوعی هنوز متصل نیست و پاسخی تولید نمی‌شود." else "لطفاً تا پایان بازیابی تاریخچه صبر کنید.",
                             modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
