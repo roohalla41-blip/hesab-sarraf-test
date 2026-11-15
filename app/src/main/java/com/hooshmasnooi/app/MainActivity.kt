@@ -682,7 +682,7 @@ private fun AtlasApp(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(AtlasText.of("رابط اصلی Android: در حال توسعه", "Android interface: in development"))
-                    Text(AtlasText.of("زبان رابط فعلی: فارسی", "Current interface language: English"))
+                    Text(AtlasText.of("زبان رابط فعلی: فارسی یا دری", "Current interface language: English"))
                     Text(AtlasText.of("هوش مصنوعی: هنوز متصل نشده", "AI engine: not connected yet"))
                     Text(AtlasText.of("دیتابیس و حساب آنلاین: هنوز متصل نشده", "Cloud database and account: not connected"))
                     Text(AtlasText.of("کلید محرمانه داخل گوشی یا GitHub قرار نمی‌گیرد", "Secrets are never placed in the app or GitHub"))
