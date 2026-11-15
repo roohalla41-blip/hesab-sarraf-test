@@ -22,6 +22,7 @@ object ChatStorage {
     private const val PREFS = "atlas_private_chat"
     private const val KEY_MESSAGES = "messages"
     private const val KEY_CONVERSATIONS = "conversations_v2"
+    private const val KEY_CONVERSATIONS_BACKUP = "conversations_v2_backup"
     private const val KEY_ACTIVE_CONVERSATION = "active_conversation"
     private const val MAX_MESSAGES = 300
     private const val MAX_CONVERSATIONS = 100
@@ -60,6 +61,20 @@ object ChatStorage {
             preferences.edit().putString(KEY_ACTIVE_CONVERSATION, migrated.id).apply()
             return listOf(migrated)
         }
+        parseConversations(raw)?.let { return it }
+
+        // Recover the last known-good snapshot instead of silently treating corrupt JSON as empty.
+        val backupRaw = preferences.getString(KEY_CONVERSATIONS_BACKUP, null)
+        val backup = parseConversations(backupRaw)
+        if (backup != null && !backupRaw.isNullOrBlank()) {
+            preferences.edit().putString(KEY_CONVERSATIONS, backupRaw).commit()
+            return backup
+        }
+        return emptyList()
+    }
+
+    private fun parseConversations(raw: String?): List<StoredConversation>? {
+        if (raw.isNullOrBlank()) return null
         return runCatching {
             val array = JSONArray(raw)
             buildList {
@@ -77,7 +92,7 @@ object ChatStorage {
                     )
                 }
             }.sortedByDescending { it.updatedAtEpochMillis }
-        }.getOrDefault(emptyList())
+        }.getOrNull()
     }
 
     fun createConversation(context: Context): StoredConversation {
@@ -206,7 +221,15 @@ object ChatStorage {
                     .put("messages", messages)
             )
         }
-        preferences(context).edit().putString(KEY_CONVERSATIONS, array.toString()).apply()
+        val prefs = preferences(context)
+        val previousSnapshot = prefs.getString(KEY_CONVERSATIONS, null)
+        val nextSnapshot = array.toString()
+        val editor = prefs.edit()
+        if (!previousSnapshot.isNullOrBlank() && previousSnapshot != nextSnapshot) {
+            // Keep one previous snapshot so a partial/corrupt write can be recovered.
+            editor.putString(KEY_CONVERSATIONS_BACKUP, previousSnapshot)
+        }
+        editor.putString(KEY_CONVERSATIONS, nextSnapshot).commit()
     }
 
     private fun preferences(context: Context) =
