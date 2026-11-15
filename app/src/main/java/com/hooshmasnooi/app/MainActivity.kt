@@ -80,7 +80,7 @@ import com.hooshmasnooi.app.domain.repository.ChatHistoryRepository
 import java.util.UUID
 import kotlinx.coroutines.launch
 
-private data class AtlasPage(val id: String, val title: String, val symbol: String)
+private const val MAX_VISIBLE_MESSAGES = 300\n\nprivate data class AtlasPage(val id: String, val title: String, val symbol: String)
 
 private val atlasPages = listOf(
     AtlasPage("chat", "گفت‌وگو", "✦"),
@@ -190,6 +190,10 @@ private fun AtlasApp(
         )
 
         messages.add(message)
+        // Keep the live screen in sync with the repository's FIFO retention policy.
+        while (messages.size > MAX_VISIBLE_MESSAGES) {
+            messages.removeAt(0)
+        }
         input = ""
         scope.launch {
             runCatching {
