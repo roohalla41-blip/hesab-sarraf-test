@@ -1,60 +1,68 @@
 # ATLAS AI — Product Roadmap
 
 ## Product foundation
-- [x] Brand identity and Persian-first product direction
-- [x] Android Kotlin + Jetpack Compose project scaffold
+- [x] Brand identity and Persian/Dari-first product direction
+- [x] Android Kotlin + Jetpack Compose project
 - [x] Provider-independent domain and repository contracts
 - [x] Server API, privacy, and safety design notes
-- [x] Feature catalog with explicit availability states
-- [x] Interactive browser preview shell for primary product areas
-- [x] Adaptive Android launcher icon and monochrome icon
+- [x] Feature catalog and explicit availability states
+- [x] Browser interface for primary product areas
+- [x] Adaptive Android launcher and monochrome icons
+- [x] Main navigation, guest profile, settings, and light/dark appearance
+- [x] Automatic Persian/English locale selection and RTL/LTR direction
 
-## Android product structure
-- [x] Primary navigation and first-pass screens
-- [x] Branded navigation drawer with grouped destinations
-- [x] Guest profile screen with local-data disclosures
-- [x] Persistent light/dark appearance preference
-- [x] Multiple local conversations: create, open, continue, rename, search, and delete with confirmation
-- [x] Migration from the previous single-conversation local store
-- [x] Automatic FIFO retention of the newest 300 messages per conversation in local history
-- [x] Keep one previous local history snapshot and recover it if the current JSON snapshot is malformed
-- [x] Normalize conversation ordering before applying the 100-conversation retention cap
-- [ ] Execute and verify automated retention, recovery, migration, and unsorted-history regression tests
-- [x] Copy individual chat messages
-- [x] Automatic Persian/English selection from device locale and RTL/LTR layout direction
-- [x] Explicit user-facing state when the general AI engine is not connected
-- [ ] Replace the bounded SharedPreferences conversation store with a transactional local database
-- [ ] Extract all translations into Android resources and complete native localization review
-- [ ] Complete Dari-specific terminology and proofreading
-- [ ] Full chat actions: edit/resend, regenerate, stop, share, and feedback
-- [ ] Attachment picker and secure local staging
-- [ ] Accessibility and responsive-layout review
-- [ ] UI tests and device-level review
+## Chat and history
+- [x] Android chat screen sends requests to the deployed `atlas-chat` Edge Function
+- [x] Browser chat sends requests to the same Edge Function
+- [x] Clear pending, success, and failure states in chat
+- [x] Local multi-conversation history on Android
+- [x] Create, open, continue, rename, search, and delete local conversations
+- [x] Bounded local retention (100 conversations; 300 messages each)
+- [ ] Replace SharedPreferences JSON storage with a transactional local database
+- [ ] Persistent browser history and optional cross-device sync, only after privacy/data design approval
+- [ ] Edit/resend, regenerate, stop generation, share, and message feedback
+- [ ] Streaming responses, cancellation, and safe retry behavior
+- [ ] Accessibility, dynamic text sizing, and physical-device layout review
+- [ ] Full localization resource extraction and native Dari proofreading
 
-## AI engine and backend (separate authorization required)
-- [ ] Confirm the independent ATLAS backend destination and data boundaries
-- [ ] Select provider/model routing and configure server-side secrets
-- [x] Add authenticated Android HTTP adapter boundary (not yet wired)
-- [x] Add RemoteChatRepository adapter with explicit failure propagation (not yet wired to the screen)
-- [ ] Connect Android client to authenticated server API
-- [ ] Implement atomic quota, rate limiting, and abuse controls
-- [ ] Add streaming responses, cancellation, and retry behavior
-- [ ] Add account lifecycle, cloud sync, export, and deletion
-- [ ] Add subscription entitlements and billing
+## AI backend and security
+- [x] Deploy the `atlas-chat` Edge Function (active version 9 at last inspection)
+- [x] Configure Android and browser clients to call the function endpoint
+- [x] Keep provider credentials on the server
+- [x] Provider fallback code for OpenAI-compatible, Groq, Z.AI, and Cloudflare Workers AI
+- [ ] Confirm that Supabase project `wwlyvojtsrklcpqsloqz` is the intended ATLAS-only backend. Its public schema currently contains 59 exchange-office, wallet, payment, and user-related tables; reported row counts were zero at inspection. No database changes have been made.
+- [ ] Confirm provider Secret names/model values and verify a real successful model response
+- [ ] Select and implement user authentication; the current endpoint accepts requests without a user JWT
+- [ ] Add durable per-user quotas, atomic usage accounting, and abuse-resistant rate limiting
+- [ ] Add monitoring and operational alerts without logging private prompts or secrets
+- [ ] Add account lifecycle, data export/deletion, and optional cloud sync after backend identity is confirmed
 
 ## Integrations and tools
-- [ ] Verify Gmail OAuth on physical Android devices and document OAuth verification requirements
-- [ ] Implement GitHub, Drive, Calendar, and other approved integrations
-- [ ] File and image understanding
+- [x] Gmail read-only integration code path
+- [ ] Verify Gmail OAuth consent and read-only inbox retrieval on physical Android devices
+- [ ] Complete Google OAuth verification if public Gmail access is retained
+- [ ] Implement GitHub, Drive, Calendar, and other integrations only with explicit user authorization
+- [ ] File/document upload and understanding
+- [ ] Image understanding and generation
 - [ ] Voice input and output
-- [ ] Web research and coding tools
+- [ ] Web research and source citations
+- [ ] Coding workspace and controlled tool execution
+
+## Plans and payments
+- [ ] Define free/paid entitlements and usage limits
+- [ ] Select payment providers and implement billing only after product and region requirements are confirmed
+- [ ] Add subscription restore, cancellation, and billing support
 
 ## Release readiness
-- [ ] Security and privacy review
-- [ ] Accessibility and localization QA
-- [ ] Automated tests and manual device testing
-- [ ] Store listing, privacy disclosures, data-safety answers, and support process
-- [ ] Release signing configuration and signed Android App Bundle (AAB)
-- [ ] Google Play testing track and production rollout
+- [ ] Resolve backend/database identity blocker
+- [ ] Complete security and privacy review
+- [ ] Complete accessibility and localization QA
+- [ ] Run automated unit/UI tests and physical-device tests
+- [ ] Finalize privacy policy, support process, and store disclosures
+- [ ] Prepare Google Play store listing, icon, feature graphic, and real app screenshots
+- [ ] Receive the user's release keystore and configure protected CI secrets
+- [ ] Build and verify a signed Android App Bundle (AAB)
+- [ ] Test through Google Play internal/closed tracks and satisfy account-specific requirements
+- [ ] Production rollout and post-launch monitoring
 
-A checked item means the described source/UI behavior exists; it does not imply that it has passed device, security, or production testing. The AI screen still uses an explicit not-connected response: the remote adapter exists, but no approved Google-to-Supabase session provider is wired, so the app cannot yet make authenticated live-model requests. No release is considered complete until all release gates have evidence.
+A checked item means the described source or deployed configuration exists; it does not mean that the feature has passed live model, security, or physical-device validation. ATLAS is not production-ready until every release blocker has evidence.
