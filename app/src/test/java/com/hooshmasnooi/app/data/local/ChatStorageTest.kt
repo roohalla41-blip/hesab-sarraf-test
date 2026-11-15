@@ -79,6 +79,31 @@ class ChatStorageTest {
     }
 
     @Test
+    fun loadingUnsortedHistoryKeepsTheOneHundredMostRecentlyUpdatedConversations() {
+        val conversations = JSONArray()
+        (1..105).forEach { number ->
+            conversations.put(
+                JSONObject()
+                    .put("id", "conversation-$number")
+                    .put("title", "Conversation $number")
+                    .put("createdAt", number.toLong())
+                    .put("updatedAt", number.toLong())
+                    .put("messages", JSONArray())
+            )
+        }
+        context.getSharedPreferences("atlas_private_chat", Context.MODE_PRIVATE)
+            .edit()
+            .putString("conversations_v2", conversations.toString())
+            .commit()
+
+        val loaded = ChatStorage.loadAll(context)
+        assertEquals(100, loaded.size)
+        assertEquals("conversation-105", loaded.first().id)
+        assertEquals("conversation-6", loaded.last().id)
+        assertFalse(loaded.any { it.id == "conversation-5" })
+    }
+
+    @Test
     fun savingMoreThanLimitKeepsNewestThreeHundredMessages() {
         val conversation = ChatStorage.createConversation(context)
         val messages = (1L..350L).map { id ->
